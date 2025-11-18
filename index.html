@@ -1003,15 +1003,51 @@ let ocrLastTs = 0;
 async function ensureOcr(){
   if(ocrReady) return;
   try{
-    ocrWorker = Tesseract.createWorker({ logger: m => { /* console.log(m); */ } });
-    await ocrWorker.load();
-    await ocrWorker.loadLanguage('eng');
-    await ocrWorker.initialize('eng');
-    await ocrWorker.setParameters({
-      tessedit_char_whitelist: '0123456789',
-      tessedit_pageseg_mode: (Tesseract.PSM && Tesseract.PSM.SINGLE_CHAR) ? Tesseract.PSM.SINGLE_CHAR : 10,  // 한 글자 인식
-      user_defined_dpi: '300'
-    });
+    // Tesseract.js compatibility: v5 returns a Promise from createWorker and is already initialized.
+    // Older versions (v2~v4) return a worker object that needs load/loadLanguage/initialize.
+    const logger = m => { /* optional: console.log(m); */ };
+    let workerOrPromise;
+
+    try{
+      // Prefer v5 style: pass language to createWorker so it's ready right away on v5.
+      workerOrPromise = Tesseract.createWorker ? Tesseract.createWorker('eng', { logger }) : null;
+    }catch(_){
+      workerOrPromise = null;
+    }
+
+    if(!workerOrPromise && Tesseract && typeof Tesseract.createWorker === 'function'){
+      // Fallback: older signature without language.
+      workerOrPromise = Tesseract.createWorker({ logger });
+    }
+
+    // If a Promise is returned (v5), await it to get the worker instance
+    let worker = workerOrPromise && typeof workerOrPromise.then === 'function'
+      ? await workerOrPromise
+      : workerOrPromise;
+
+    if(!worker){
+      throw new Error('createWorker 가 worker를 반환하지 않았습니다.');
+    }
+
+    // Older versions expose .load/.initialize; v5 does not.
+    if (typeof worker.load === 'function' || typeof worker.initialize === 'function'){
+      if (typeof worker.load === 'function')        await worker.load();
+      if (typeof worker.loadLanguage === 'function') await worker.loadLanguage('eng');
+      if (typeof worker.initialize === 'function')   await worker.initialize('eng');
+    }
+
+    // Common parameters (supported on both; silently ignore if not)
+    if (typeof worker.setParameters === 'function'){
+      try{
+        await worker.setParameters({
+          tessedit_char_whitelist: '0123456789',
+          tessedit_pageseg_mode: (Tesseract.PSM && Tesseract.PSM.SINGLE_CHAR) ? Tesseract.PSM.SINGLE_CHAR : 10,
+          user_defined_dpi: '300'
+        });
+      }catch(_){ /* ignore */ }
+    }
+
+    ocrWorker = worker;
     ocrReady = true;
     log('🧠 OCR 준비 완료');
   }catch(e){
