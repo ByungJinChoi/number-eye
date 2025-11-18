@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
 <meta charset="utf-8" />
-<title>XROBO BLE — Digit OCR Edition</title>
+<title>XROBO BLE — Digit OCR Edition (OCR v5 fix)</title>
 <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no" />
 <script src="https://unpkg.com/blockly/blockly.min.js"></script>
 <!-- Tesseract.js for in-browser OCR (digit-only) -->
@@ -615,7 +615,7 @@ var SERVICE_UUID=0xFFF0;
 var bleDevice=null,bleServer=null,bleService=null,writeChar=null,notifyChar=null;
 var isConnected=false, isRunning=false, isFullscreenRun=false;
 var $=id=>document.getElementById(id);
-var log=function(m){ var L=$('log'); L.textContent+=m+"\n"; L.scrollTop=L.scrollHeight; };
+var log=function(m){ var L=$('log'); L.textContent+=m+"\\n"; L.scrollTop=L.scrollHeight; };
 var dot=$('statusDot');
 var btnConnect=$('connectToggle'), btnRun=$('runToggle'), btnTest=$('testBtn');
 
@@ -808,7 +808,7 @@ var cancelToken = 0;
 
 function sendRaw(s){
   if(!writeChar){ log('➡️(BLE 미연결) '+s); return Promise.resolve(); }
-  return writeChar.writeValue(enc(s+'\n')).then(()=>{ log('➡️ '+s); }).catch(e=>{ log('⚠️ 전송 실패: '+e); });
+  return writeChar.writeValue(enc(s+'\\n')).then(()=>{ log('➡️ '+s); }).catch(e=>{ log('⚠️ 전송 실패: '+e); });
 }
 async function processQueue(localToken){
   if(queueBusy) return;
@@ -884,7 +884,7 @@ async function stopRun(){
   overlay.setAttribute('aria-hidden','true');
   isFullscreenRun = false;
   try{ if(document.fullscreenElement) await document.exitFullscreen(); }catch(e){}
-  try{ if(writeChar) writeChar.writeValue(enc('S\n')); }catch(e){}
+  try{ if(writeChar) writeChar.writeValue(enc('S\\n')); }catch(e){}
   if(overlayStartedCam){ stopCam(); overlayStartedCam=false; }
 }
 
@@ -995,15 +995,24 @@ let ocrLastTs = 0;
 async function ensureOcr(){
   if(ocrReady) return;
   try{
-    ocrWorker = Tesseract.createWorker({ logger: m => { /* console.log(m); */ } });
-    await ocrWorker.load();
-    await ocrWorker.loadLanguage('eng');
-    await ocrWorker.initialize('eng');
-    await ocrWorker.setParameters({
-      tessedit_char_whitelist: '0123456789',
-      tessedit_pageseg_mode: (Tesseract.PSM && Tesseract.PSM.SINGLE_CHAR) ? Tesseract.PSM.SINGLE_CHAR : 10,  // 한 글자 인식
-      user_defined_dpi: '300'
-    });
+    // --- v5 우선: createWorker(lang, oem, options) 는 이미 로드/초기화된 worker를 반환합니다.
+    try{
+      ocrWorker = await Tesseract.createWorker('eng', 1, { logger: m => { /* console.log(m); */ } });
+    }catch(_e){
+      // --- 구버전(v2) 폴백: load → loadLanguage → initialize
+      ocrWorker = Tesseract.createWorker({ logger: m => { /* console.log(m); */ } });
+      if (ocrWorker.load)         await ocrWorker.load();
+      if (ocrWorker.loadLanguage) await ocrWorker.loadLanguage('eng');
+      if (ocrWorker.initialize)   await ocrWorker.initialize('eng');
+    }
+    if (ocrWorker.setParameters){
+      const psm = (Tesseract && Tesseract.PSM && Tesseract.PSM.SINGLE_CHAR) ? Tesseract.PSM.SINGLE_CHAR : 10;
+      await ocrWorker.setParameters({
+        tessedit_char_whitelist: '0123456789',
+        tessedit_pageseg_mode: psm,
+        user_defined_dpi: '300'
+      });
+    }
     ocrReady = true;
     log('🧠 OCR 준비 완료');
   }catch(e){
@@ -1502,16 +1511,16 @@ function stopOverlayEyes(){
   /* ===== utils ===== */
   function safeEval(expr){
     if(typeof expr!=='string') return NaN;
-    expr = expr.replace(/[^0-9+\-*/\s]/g,'').trim();
+    expr = expr.replace(/[^0-9+\\-*/\\s]/g,'').trim();
     if(!expr) return NaN;
-    const tokens = expr.match(/(\d+|[+\-*/])/g) || [];
+    const tokens = expr.match(/(\\d+|[+\\-*/])/g) || [];
     if(tokens.length===0) return NaN;
     const values=[], ops=[]; let expectNum=true, unary=null;
     function prec(op){ return (op==='*'||op==='/')?2:1; }
     function apply(){ const op=ops.pop(), b=values.pop(), a=values.pop();
       values.push(op==='+'?a+b: op==='-'?a-b: op==='*'?a*b: (b===0?0:Math.trunc(a/b))); }
     for(const tk of tokens){
-      if(/^\d+$/.test(tk)){
+      if(/^\\d+$/.test(tk)){
         let v=parseInt(tk,10); if(unary==='-') v=-v; unary=null; values.push(v); expectNum=false;
       }else{
         if(expectNum){ if(tk==='+'||tk==='-') unary=tk; }
@@ -1557,7 +1566,7 @@ function stopOverlayEyes(){
       if(label==='취소'){ cancel(); return; }
       if(label==='C'){ buffer=''; sync(); return; }
       if(label==='←'){ buffer = buffer.slice(0, buffer.length-1); sync(); return; }
-      if(/^[0-9+\-*/]$/.test(label)){ buffer += label; sync(); return; }
+      if(/^[0-9+\\-*/]$/.test(label)){ buffer += label; sync(); return; }
     };
 
     function getButtonFromEvent(e){
@@ -1832,12 +1841,12 @@ function stopOverlayEyes(){
   function patchPrompt(){
     try{
       if(!window.Blockly) return;
-      const numLike = v => /^[\s]*[+\-]?\d+(?:[\s]*[+\-*/][\s]*[+\-]?\d+)*[\s]*$/.test(String(v||''));
+      const numLike = v => /^[\\s]*[+\\-]?\\d+(?:[\\s]*[+\\-*/][\\s]*[+\\-]?\\d+)*[\\s]*$/.test(String(v||''));
       if(Blockly.dialog && typeof Blockly.dialog.setPrompt==='function' && !Blockly.dialog.__xrobo_v14){
         Blockly.dialog.setPrompt(function(msg, defVal, cb){
           const looksNumeric = numLike(defVal) || /value|값|number|숫자/i.test(String(msg||''));
           if(looksNumeric){
-            promptCallback = v => { try{ cb(v); }catch(_){} };
+            promptCallback = v => { try{ cb(v); }catch(_){ } };
             openForPrompt(defVal, lastAnchor);
           }else{
             const ans = window.prompt(String(msg||''), String(defVal||''));
@@ -1850,7 +1859,7 @@ function stopOverlayEyes(){
         Blockly.prompt = function(message, defaultValue, callback){
           const looksNumeric = numLike(defaultValue) || /value|값|number|숫자/i.test(String(message||''));
           if(looksNumeric){
-            promptCallback = v=>{ try{ callback(v); }catch(_){}};
+            promptCallback = v=>{ try{ callback(v); }catch(_){ }};
             openForPrompt(defaultValue, lastAnchor);
           }else{
             return old ? old.apply(this, arguments) : window.prompt(message, defaultValue);
