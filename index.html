@@ -129,7 +129,7 @@
   /* ROI 초점 박스 */
   #focusBox{
     position:absolute; left:50%; top:50%;
-    width:22%; aspect-ratio:1/1;
+    width:32%; aspect-ratio:1/1;
     transform: translate(-50%,-50%);
     border:2px solid rgba(255,255,255,.9);
     border-radius:10px;
@@ -848,6 +848,12 @@ function startTest(){
   cancelToken++; queue = [];
   isFullscreenRun = false;
   setRunning(true);
+  // 테스트 시작 시 이미 인식된 숫자가 있다면 한 번 즉시 실행
+  if (typeof activeDigit !== 'undefined' && activeDigit !== null) {
+    log('▶ 테스트 시작: 현재 숫자 ' + activeDigit + ' 이벤트 실행');
+    triggerEvent('D' + activeDigit);
+  }
+}
 }
 /* 전체화면 눈동자 실행 */
 let overlayStartedCam = false;
@@ -966,7 +972,6 @@ async function startCam(){
     updateDigitReadout(null);
     await ensureOcr();  // OCR 준비
     startDetectLoop();
-    startOcrDebugLog();
     log('🎥 카메라 켜짐');
   }catch(e){
     log('❌ 카메라 실패: '+e);
@@ -981,7 +986,6 @@ function stopCam(){
   }
   camStream = null; camOn=false; updateCamUi();
   if(camRAF){ cancelAnimationFrame(camRAF); camRAF=null; }
-  stopOcrDebugLog();
   activeDigit=candDigit=null; candSince=0; fx=fy=fxT=fyT=0.5;
   focusBox.style.left='50%'; focusBox.style.top='50%'; focusBox.style.opacity='.15';
   updateDigitReadout(null);
@@ -994,38 +998,6 @@ let ocrWorker = null;
 let ocrReady = false;
 let ocrBusy = false;
 let ocrLastTs = 0;
-
-let ocrDebugLastDigit = null;
-let ocrDebugLastConf  = null;
-let ocrDebugLastAt    = 0;
-let ocrDebugTimer     = null;
-
-function startOcrDebugLog(){
-  if(ocrDebugTimer) clearInterval(ocrDebugTimer);
-  ocrDebugTimer = setInterval(()=>{
-    if(!camOn) return;
-    if(!ocrReady){
-      log('number : - (OCR not ready)');
-      return;
-    }
-    if(!ocrDebugLastAt){
-      log('number : - (no result yet)');
-      return;
-    }
-    const digit = (ocrDebugLastDigit != null) ? ocrDebugLastDigit : '-';
-    const conf  = (typeof ocrDebugLastConf === 'number' && ocrDebugLastConf >= 0)
-      ? ocrDebugLastConf.toFixed(1) : '0.0';
-    log('number : ' + digit + ' ' + conf + '%');
-  }, 1000);
-}
-
-function stopOcrDebugLog(){
-  if(ocrDebugTimer){
-    clearInterval(ocrDebugTimer);
-    ocrDebugTimer = null;
-  }
-}
-
 
 async function ensureOcr(){
   if(ocrReady) return;
@@ -1056,7 +1028,7 @@ async function ensureOcr(){
 }
 
 /* ROI 좌표(원본 비디오 해상도 기준) 계산 */
-function getRoiRectFromFocus(video, fracW=0.30, fracH=0.30){
+function getRoiRectFromFocus(video, fracW=0.45, fracH=0.45){
   const vw = Math.max(1, video.videoWidth || 320);
   const vh = Math.max(1, video.videoHeight|| 240);
   const cx = Math.round((1 - fx) * (vw - 1));  // 좌우 반전 보정
@@ -1101,9 +1073,6 @@ async function runOcrOnVideo(video){
   const { mean } = preprocessToOcrCanvas(video, rect);
   if(mean < BG_MIN_MEAN){
     // 배경이 너무 어두우면 하얀 종이가 아닐 가능성 → 스킵
-    ocrDebugLastDigit = null;
-    ocrDebugLastConf  = null;
-    ocrDebugLastAt    = now;
     return null;
   }
   try{
@@ -1124,12 +1093,6 @@ async function runOcrOnVideo(video){
       const m = res.data.text.match(/[0-9]/);
       if(m){ bestDigit = m[0]; bestConf = (res.data.confidence||0); }
     }
-
-    // 디버그용 마지막 인식 결과(임계값과 상관없이) 저장
-    ocrDebugLastDigit = bestDigit;
-    ocrDebugLastConf  = bestConf;
-    ocrDebugLastAt    = performance.now();
-
     ocrBusy = false;
     if(bestDigit != null && bestConf >= OCR_MIN_CONF){
       return { digit: bestDigit, conf: bestConf|0 };
