@@ -129,7 +129,7 @@
   /* ROI 초점 박스 */
   #focusBox{
     position:absolute; left:50%; top:50%;
-    width:22%; aspect-ratio:1/1;
+    width:38%; aspect-ratio:1/1;
     transform: translate(-50%,-50%);
     border:2px solid rgba(255,255,255,.9);
     border-radius:10px;
@@ -1023,7 +1023,7 @@ async function ensureOcr(){
 }
 
 /* ROI 좌표(원본 비디오 해상도 기준) 계산 */
-function getRoiRectFromFocus(video, fracW=0.30, fracH=0.30){
+function getRoiRectFromFocus(video, fracW=0.45, fracH=0.45){
   const vw = Math.max(1, video.videoWidth || 320);
   const vh = Math.max(1, video.videoHeight|| 240);
   const cx = Math.round((1 - fx) * (vw - 1));  // 좌우 반전 보정
