@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
 <meta charset="utf-8" />
-<title>XROBO BLE — Digit OCR Edition (xrobo_number)</title>
+<title>XROBO BLE — Digit OCR Edition (OCR v5 fix)</title>
 <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no" />
 <script src="https://unpkg.com/blockly/blockly.min.js"></script>
 <!-- Tesseract.js for in-browser OCR (digit-only) -->
@@ -917,13 +917,12 @@ const LOW_W = 64, LOW_H = 48;         // 다운샘플 크기 (모션만)
 const MASS_MIN = 12000;               // 모션 총량 임계
 const FOCUS_LERP = 0.20;              // 초점 스무딩
 
-// OCR 파라미터 (완화 + 다양한 배경 허용)
+// OCR 파라미터
 const OCR_W = 240, OCR_H = 240;
-const OCR_INTERVAL_MS = 420;          // OCR 주기 (조금 빠르게)
-const OCR_HOLD_MS = 240;              // 인식 안정화 시간 (확정까지 대기)
-const OCR_MIN_CONF = 40;              // 최소 신뢰도 완화 (더 관대)
-const BG_MIN_MEAN = 0;                // 배경 밝기 제한 제거(어두운/색깔 배경도 허용)
-
+const OCR_INTERVAL_MS = 420;
+const OCR_HOLD_MS = 240;
+const OCR_MIN_CONF = 48;
+const BG_MIN_MEAN = 90;
               // ROI 평균 밝기 최소(하얀 종이 조건 힌트)
 
 let camStream = null, camOn = false, camRAF = null;
