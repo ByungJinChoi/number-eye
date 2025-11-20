@@ -942,6 +942,7 @@ function toGray(r,g,b){ return (r*0.299 + g*0.587 + b*0.114)|0; }
 /* 상태 (패널) */
 let activeDigit = null, candDigit = null, candSince = 0;
 let fx=0.5, fy=0.5, fxT=0.5, fyT=0.5;
+let lastDigitLogTs = 0;
 
 function setCamBadge(t){ camBadge.textContent = 'Cam: ' + t; }
 function updateCamUi(){
@@ -980,7 +981,7 @@ function stopCam(){
   }
   camStream = null; camOn=false; updateCamUi();
   if(camRAF){ cancelAnimationFrame(camRAF); camRAF=null; }
-  activeDigit=candDigit=null; candSince=0; fx=fy=fxT=fyT=0.5;
+  activeDigit=candDigit=null; candSince=0; fx=fy=fxT=fyT=0.5; lastDigitLogTs=0;
   focusBox.style.left='50%'; focusBox.style.top='50%'; focusBox.style.opacity='.15';
   updateDigitReadout(null);
   log('🛑 카메라 꺼짐');
@@ -1142,9 +1143,20 @@ function startDetectLoop(){
       const out = await runOcrOnVideo(camVideo);
       const now = performance.now();
       let frameDigit = null;
+      let frameConf = null;
       if(out && out.digit!=null){
         frameDigit = String(out.digit);
+        frameConf = out.conf;
       }
+
+      // 1초 주기 디버그 로그: 현재 프레임에서 가장 가까운 숫자와 신뢰도 표시
+      if (now - lastDigitLogTs >= 1000){
+        lastDigitLogTs = now;
+        const logDigit = frameDigit != null ? frameDigit : '-';
+        const logConf  = frameConf != null ? frameConf.toFixed(1) : 0;
+        log(`number : ${logDigit} ${logConf}%`);
+      }
+
       if (candDigit !== frameDigit){ candDigit = frameDigit; candSince = now; }
       if ((now - candSince) >= OCR_HOLD_MS && activeDigit !== frameDigit){
         activeDigit = frameDigit;
