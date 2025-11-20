@@ -966,6 +966,7 @@ async function startCam(){
     updateDigitReadout(null);
     await ensureOcr();  // OCR 준비
     startDetectLoop();
+    startOcrDebugLog();
     log('🎥 카메라 켜짐');
   }catch(e){
     log('❌ 카메라 실패: '+e);
@@ -980,6 +981,7 @@ function stopCam(){
   }
   camStream = null; camOn=false; updateCamUi();
   if(camRAF){ cancelAnimationFrame(camRAF); camRAF=null; }
+  stopOcrDebugLog();
   activeDigit=candDigit=null; candSince=0; fx=fy=fxT=fyT=0.5;
   focusBox.style.left='50%'; focusBox.style.top='50%'; focusBox.style.opacity='.15';
   updateDigitReadout(null);
@@ -992,6 +994,38 @@ let ocrWorker = null;
 let ocrReady = false;
 let ocrBusy = false;
 let ocrLastTs = 0;
+
+let ocrDebugLastDigit = null;
+let ocrDebugLastConf  = null;
+let ocrDebugLastAt    = 0;
+let ocrDebugTimer     = null;
+
+function startOcrDebugLog(){
+  if(ocrDebugTimer) clearInterval(ocrDebugTimer);
+  ocrDebugTimer = setInterval(()=>{
+    if(!camOn) return;
+    if(!ocrReady){
+      log('number : - (OCR not ready)');
+      return;
+    }
+    if(!ocrDebugLastAt){
+      log('number : - (no result yet)');
+      return;
+    }
+    const digit = (ocrDebugLastDigit != null) ? ocrDebugLastDigit : '-';
+    const conf  = (typeof ocrDebugLastConf === 'number' && ocrDebugLastConf >= 0)
+      ? ocrDebugLastConf.toFixed(1) : '0.0';
+    log('number : ' + digit + ' ' + conf + '%');
+  }, 1000);
+}
+
+function stopOcrDebugLog(){
+  if(ocrDebugTimer){
+    clearInterval(ocrDebugTimer);
+    ocrDebugTimer = null;
+  }
+}
+
 
 async function ensureOcr(){
   if(ocrReady) return;
@@ -1067,6 +1101,9 @@ async function runOcrOnVideo(video){
   const { mean } = preprocessToOcrCanvas(video, rect);
   if(mean < BG_MIN_MEAN){
     // 배경이 너무 어두우면 하얀 종이가 아닐 가능성 → 스킵
+    ocrDebugLastDigit = null;
+    ocrDebugLastConf  = null;
+    ocrDebugLastAt    = now;
     return null;
   }
   try{
@@ -1087,6 +1124,12 @@ async function runOcrOnVideo(video){
       const m = res.data.text.match(/[0-9]/);
       if(m){ bestDigit = m[0]; bestConf = (res.data.confidence||0); }
     }
+
+    // 디버그용 마지막 인식 결과(임계값과 상관없이) 저장
+    ocrDebugLastDigit = bestDigit;
+    ocrDebugLastConf  = bestConf;
+    ocrDebugLastAt    = performance.now();
+
     ocrBusy = false;
     if(bestDigit != null && bestConf >= OCR_MIN_CONF){
       return { digit: bestDigit, conf: bestConf|0 };
