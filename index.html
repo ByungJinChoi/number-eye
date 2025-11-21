@@ -10,19 +10,82 @@
 <style>
 
 /* === PATCH: overlay split styles === */
-#playOverlay.show .body{ display:grid; grid-template-columns: 1fr minmax(260px, 32vw); gap:0; height:100%; }
-#playOverlay.show video#eyesCam{ position:relative; left:auto; right:auto; top:auto; bottom:auto; width:100%; height:100%; object-fit:contain; background:#000; transform: scaleX(-1); opacity:1; pointer-events:auto; z-index:auto; }
-#playOverlay .ov-right-panel{ display:flex; flex-direction:column; min-width:0; background:#0b0f14; border-left:1px solid #123; }
-#playOverlay .ov-header{ padding:10px 12px; font-weight:600; color:#b7d7ff; border-bottom:1px solid #123; }
-#playOverlay .ov-log{ flex:1 1 auto; overflow:auto; padding:10px 12px; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size:13px; line-height:1.4; color:#d3e6ff; background:#0b0f14; }
-#playOverlay #overlayDigitBadge{ position:relative; margin:8px 12px 12px; display:inline-flex; align-items:center; gap:8px; padding:8px 10px; border-radius:8px; background:#132033; color:#e8f3ff; border:1px solid #244; }
-#playOverlay #overlayDigitBadge .label{ opacity:.7; font-size:12px; }
-#playOverlay #overlayDigitBadge .value{ font-weight:700; font-size:18px; letter-spacing:.5px; }
-@media (max-width:880px){
-  #playOverlay.show .body{ grid-template-columns: 1fr; grid-template-rows: 1fr 220px; }
-  #playOverlay .ov-right-panel{ border-left:none; border-top:1px solid #123; }
+/* 실행(오버레이)일 때만 카메라 + 로그 2분할 */
+#playOverlay.show .body{
+  display:grid;
+  grid-template-columns: 1fr minmax(260px, 32vw);
+  gap:0;
+  height:100%;
 }
-
+#playOverlay.show video#eyesCam{
+  position:relative;
+  left:auto;
+  right:auto;
+  top:auto;
+  bottom:auto;
+  width:100%;
+  height:100%;
+  object-fit:contain;
+  background:#000;
+  transform: scaleX(-1);
+  opacity:1;
+  pointer-events:auto;
+  z-index:auto;
+}
+#playOverlay .ov-right-panel{
+  display:flex;
+  flex-direction:column;
+  min-width:0;
+  background:#0b0f14;
+  border-left:1px solid #123;
+}
+#playOverlay .ov-header{
+  padding:10px 12px;
+  font-weight:600;
+  color:#b7d7ff;
+  border-bottom:1px solid #123;
+}
+#playOverlay .ov-log{
+  flex:1 1 auto;
+  overflow:auto;
+  padding:10px 12px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size:13px;
+  line-height:1.4;
+  color:#d3e6ff;
+  background:#0b0f14;
+}
+#playOverlay #overlayDigitBadge{
+  position:relative;
+  margin:8px 12px 12px;
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  padding:8px 10px;
+  border-radius:8px;
+  background:#132033;
+  color:#e8f3ff;
+  border:1px solid #244;
+}
+#playOverlay #overlayDigitBadge .label{
+  opacity:.7;
+  font-size:12px;
+}
+#playOverlay #overlayDigitBadge .value{
+  font-weight:700;
+  font-size:18px;
+  letter-spacing:.5px;
+}
+@media (max-width:880px){
+  #playOverlay.show .body{
+    grid-template-columns: 1fr;
+    grid-template-rows: 1fr 220px;
+  }
+  #playOverlay .ov-right-panel{
+    border-left:none;
+    border-top:1px solid #123;
+  }
+}
 
 /* === PATCH: hide focus box & eyes stage === */
 #focusBox{display:none !important;}
@@ -146,7 +209,7 @@
   .camUi{ position:absolute; right:12px; top:12px; display:flex; gap:8px; align-items:center; z-index:2; }
   .camBadge{ font: 700 12px/1 system-ui; color:#fff; padding:.35rem .6rem; border-radius:999px; border:1px solid rgba(255,255,255,.3); background:rgba(0,0,0,.35); backdrop-filter: blur(6px) }
 
-  /* ROI 초점 박스 */
+  /* ROI 초점 박스 (지금은 CSS로 숨김 처리됨) */
   #focusBox{
     position:absolute; left:50%; top:50%;
     width:38%; aspect-ratio:1/1;
@@ -189,7 +252,7 @@
     font-size: calc(12px * var(--uiScale)); color:#d1e4ff;
   }
 
-  /* 실행창 토글 핸들 */
+  /* 실행창 토글 핸들 (현재는 CSS로 숨김 처리됨) */
   #panelHandle{
     position:absolute; top: calc(12px * var(--uiScale)); right: 0;
     z-index:999; width: var(--handleW); height: var(--handleH);
@@ -222,7 +285,7 @@
   body.panel-collapsed #right{ display:none; }
   body.panel-collapsed #left{ flex:1 1 100%; }
 
-  /* ── 전체화면 오버레이(눈동자) ───────────────── */
+  /* ── 전체화면 오버레이(눈동자 + 카메라) ───────────────── */
   #playOverlay{
     position:fixed; inset:0; background:#000; color:#fff; display:none; z-index:10000;
     touch-action:none; overscroll-behavior:contain; -webkit-tap-highlight-color:transparent;
@@ -230,6 +293,7 @@
     --eyesGap: 4.8vmin;            /* 8vmin * 0.6 */
     --eyeSize: 25.2vmin;           /* 42vmin * 0.6 */
     --pupilSize: 9.6vmin;          /* 16vmin * 0.6 */
+    --blinkSpeed: 180ms;
   }
   @media (orientation: landscape){
     #playOverlay{
@@ -286,7 +350,6 @@
     position: fixed; left:0; bottom:0; width:12px; height:12px;
     opacity: .05; pointer-events:none; z-index:0; transform: scaleX(-1);
   }
-
 
   /* === 파일 드롭다운 === */
   .dropdown{ position:relative; }
@@ -380,7 +443,6 @@
         </div>
       </div>
 
-
       <span class="state"><span id="statusDot" class="badgeDot off">off</span></span>
       <button id="connectToggle" class="btn">연결</button>
 
@@ -399,7 +461,6 @@
       <button id="panelHandle" class="open" title="실행창 닫기"></button>
     </div>
     <div id="hResizer" class="hsplit" title="좌우 크기 조절 바"></div>
-
 
     <div id="right">
       <!-- 우측 상단: 카메라 프리뷰 -->
@@ -458,17 +519,17 @@
     </category>
   </xml>
 
-  <!-- 전체화면 오버레이: 눈동자 -->
+  <!-- 전체화면 오버레이: 눈동자 + 카메라 + 로그 -->
   <div id="playOverlay" aria-hidden="true">
     <div class="body">
-      <!-- 처리용 전면 카메라(작게) -->
+      <!-- 처리용 전면 카메라 -->
       <video id="eyesCam" playsinline muted autoplay></video>
-      <!-- PATCH: right panel for overlay logs -->
+      <!-- 오른쪽 실행 로그 패널 -->
       <div id="ovRight" class="ov-right-panel" aria-label="실행 로그 영역">
         <div class="ov-header">실행 로그</div>
         <div id="ovLog" class="ov-log" role="log" aria-live="polite" aria-atomic="false"></div>
       </div>
-      <!-- 눈동자 -->
+      <!-- 눈동자 (지금은 CSS로 숨김) -->
       <div id="eyesStage" aria-label="귀여운 눈동자">
         <div class="eyes">
           <div class="eye"><div class="pupil"><div class="shine"></div></div><div class="eyelid"></div></div>
@@ -632,7 +693,6 @@ ws.addChangeListener(function(ev){
   if(ev && ev.type===Blockly.Events.UI && ev.element==='zoom'){ applyUiScaleFromWorkspace(); }
 });
 setInterval(function(){ applyUiScaleFromWorkspace(); }, 200);
-applyUiScaleFromWorkspace();
 applyHeaderHeight();
 
 /* ================= BLE & 로그 ================= */
@@ -640,20 +700,21 @@ var SERVICE_UUID=0xFFF0;
 var bleDevice=null,bleServer=null,bleService=null,writeChar=null,notifyChar=null;
 var isConnected=false, isRunning=false, isFullscreenRun=false;
 var $=id=>document.getElementById(id);
+
+/* === 수정: 오버레이 로그(ovLog)까지 같이 찍히도록 log() 확장 === */
 var log=function(m){
   var L=$('log');
   if(L){
-    L.textContent+=m+"
-";
+    L.textContent+=m+"\n";
     L.scrollTop=L.scrollHeight;
   }
   var OL=$('ovLog');
   if(OL){
-    OL.textContent+=m+"
-";
+    OL.textContent+=m+"\n";
     OL.scrollTop=OL.scrollHeight;
   }
 };
+
 var dot=$('statusDot');
 var btnConnect=$('connectToggle'), btnRun=$('runToggle'), btnTest=$('testBtn');
 
@@ -846,7 +907,7 @@ var cancelToken = 0;
 
 function sendRaw(s){
   if(!writeChar){ log('➡️(BLE 미연결) '+s); return Promise.resolve(); }
-  return writeChar.writeValue(enc(s+'\\n')).then(()=>{ log('➡️ '+s); }).catch(e=>{ log('⚠️ 전송 실패: '+e); });
+  return writeChar.writeValue(enc(s+'\n')).then(()=>{ log('➡️ '+s); }).catch(e=>{ log('⚠️ 전송 실패: '+e); });
 }
 async function processQueue(localToken){
   if(queueBusy) return;
@@ -922,7 +983,7 @@ async function stopRun(){
   overlay.setAttribute('aria-hidden','true');
   isFullscreenRun = false;
   try{ if(document.fullscreenElement) await document.exitFullscreen(); }catch(e){}
-  try{ if(writeChar) writeChar.writeValue(enc('S\\n')); }catch(e){}
+  try{ if(writeChar) writeChar.writeValue(enc('S\n')); }catch(e){}
   if(overlayStartedCam){ stopCam(); overlayStartedCam=false; }
 }
 
@@ -941,7 +1002,7 @@ document.addEventListener('keydown', (e)=>{
   if (isFullscreenRun && e.key === 'Escape') stopRun();
 });
 
-/* ================= 카메라(패널): ROI 내부에서 숫자 인식 + 움직임 초점 ================= */
+/* ================= 카메라(패널): 전체 화면에서 숫자 인식 + 움직임 초점 ================= */
 const camWrap   = document.getElementById('camWrap');
 const camVideo  = document.getElementById('camVideo');
 const camToggle = document.getElementById('camToggle');
@@ -960,8 +1021,7 @@ const OCR_W = 240, OCR_H = 240;
 const OCR_INTERVAL_MS = 420;
 const OCR_HOLD_MS = 240;
 const OCR_MIN_CONF = 48;
-const BG_MIN_MEAN = 90;
-              // ROI 평균 밝기 최소(하얀 종이 조건 힌트)
+const BG_MIN_MEAN = 90;               // ROI 평균 밝기 최소(하얀 종이 조건 힌트)
 
 let camStream = null, camOn = false, camRAF = null;
 
@@ -1162,7 +1222,7 @@ function startDetectLoop(){
       }
     }
 
-    // 초점 업데이트
+    // 초점 업데이트 (focusBox는 화면에 안 보이지만, 내부 계산은 유지)
     if (mass > MASS_MIN){
       const cx = sx / mass, cy = sy / mass;
       fxT = 1 - (cx / (LOW_W-1));  // 좌우 반전
@@ -1175,7 +1235,7 @@ function startDetectLoop(){
     focusBox.style.left = (fx*100).toFixed(1)+'%';
     focusBox.style.top  = (fy*100).toFixed(1)+'%';
 
-    // 2) ROI OCR (주기적으로)
+    // 2) 전체 화면 OCR (주기적으로)  ← ★ 수정: ROI가 아닌 fullFrame 사용
     if(runOcr){
       const out = await runOcrOnVideo(camVideo, true);
       const now = performance.now();
@@ -1212,7 +1272,7 @@ function startDetectLoop(){
   camRAF = requestAnimationFrame(step);
 }
 
-/* ================= 전체화면 눈동자: ROI에서도 같은 OCR 파이프라인 사용 ================= */
+/* ================= 전체화면 눈동자: 전체 프레임 OCR ================= */
 const overlayEl = document.getElementById('playOverlay');
 const overlayDigitBadge = document.getElementById('overlayDigitBadge');
 const overlayDigitVal = overlayDigitBadge.querySelector('.value');
@@ -1287,7 +1347,7 @@ let ovCurrent = {x:0, y:0}, ovTarget = {x:0, y:0};
 // 오버레이에서의 숫자 안정화 상태
 let ovActiveDigit = null, ovCandDigit = null, ovCandSince = 0;
 
-/* 오버레이 감지 루프 */
+/* === 수정: async function 으로 변경 (await eyesCam.play() 문법 오류 해결) === */
 async function startOverlayEyes(){
   // PATCH: fullscreen OCR on full frame with log + badge (no cartoon eyes used)
   if(eyesRAF){ cancelAnimationFrame(eyesRAF); eyesRAF = null; }
@@ -1324,7 +1384,6 @@ async function startOverlayEyes(){
     eyesRAF = requestAnimationFrame(loop);
   }
   eyesRAF = requestAnimationFrame(loop);
-
 }
 
 function stopOverlayEyes(){
@@ -1451,7 +1510,6 @@ function stopOverlayEyes(){
 })();
 </script>
 
-
 <!-- === 새로만들기 전용 안전 바인딩(다른 코드 변경 없이 추가) === -->
 <script>
 (function(){
@@ -1509,16 +1567,16 @@ function stopOverlayEyes(){
   /* ===== utils ===== */
   function safeEval(expr){
     if(typeof expr!=='string') return NaN;
-    expr = expr.replace(/[^0-9+\\-*/\\s]/g,'').trim();
+    expr = expr.replace(/[^0-9+\-*/\s]/g,'').trim();
     if(!expr) return NaN;
-    const tokens = expr.match(/(\\d+|[+\\-*/])/g) || [];
+    const tokens = expr.match(/(\d+|[+\-*/])/g) || [];
     if(tokens.length===0) return NaN;
     const values=[], ops=[]; let expectNum=true, unary=null;
     function prec(op){ return (op==='*'||op==='/')?2:1; }
     function apply(){ const op=ops.pop(), b=values.pop(), a=values.pop();
       values.push(op==='+'?a+b: op==='-'?a-b: op==='*'?a*b: (b===0?0:Math.trunc(a/b))); }
     for(const tk of tokens){
-      if(/^\\d+$/.test(tk)){
+      if(/^\d+$/.test(tk)){
         let v=parseInt(tk,10); if(unary==='-') v=-v; unary=null; values.push(v); expectNum=false;
       }else{
         if(expectNum){ if(tk==='+'||tk==='-') unary=tk; }
@@ -1564,7 +1622,7 @@ function stopOverlayEyes(){
       if(label==='취소'){ cancel(); return; }
       if(label==='C'){ buffer=''; sync(); return; }
       if(label==='←'){ buffer = buffer.slice(0, buffer.length-1); sync(); return; }
-      if(/^[0-9+\\-*/]$/.test(label)){ buffer += label; sync(); return; }
+      if(/^[0-9+\-*/]$/.test(label)){ buffer += label; sync(); return; }
     };
 
     function getButtonFromEvent(e){
@@ -1736,7 +1794,7 @@ function stopOverlayEyes(){
         else if(e.key==='Escape'){ e.preventDefault(); cancel(); }
       }, {once:true, capture:true});
     }
-    input.setAttribute('pattern','[0-9+\\-*/]*');
+    input.setAttribute('pattern','[0-9+\-*/]*');
     input.setAttribute('autocomplete','off');
     input.setAttribute('autocorrect','off');
     input.setAttribute('autocapitalize','off');
@@ -1755,7 +1813,7 @@ function stopOverlayEyes(){
 
   function openForField(field){
     activeField = field || null; activeInput = null; promptCallback = null;
-    buffer = (field && typeof field.getValue==='function') ? String(field.getValue()||'') : '';
+    buffer = (field && typeof field.getValue==='function') ? String(field.getValue||'') : '';
     showPad();
     if(!positionNearField(field)){
       positionNearPoint(lastAnchor.x, lastAnchor.y);
@@ -1839,7 +1897,7 @@ function stopOverlayEyes(){
   function patchPrompt(){
     try{
       if(!window.Blockly) return;
-      const numLike = v => /^[\\s]*[+\\-]?\\d+(?:[\\s]*[+\\-*/][\\s]*[+\\-]?\\d+)*[\\s]*$/.test(String(v||''));
+      const numLike = v => /^[\s]*[+\-]?\d+(?:[\s]*[+\-*/][\s]*[+\-]?\d+)*[\s]*$/.test(String(v||''));
       if(Blockly.dialog && typeof Blockly.dialog.setPrompt==='function' && !Blockly.dialog.__xrobo_v14){
         Blockly.dialog.setPrompt(function(msg, defVal, cb){
           const looksNumeric = numLike(defVal) || /value|값|number|숫자/i.test(String(msg||''));
