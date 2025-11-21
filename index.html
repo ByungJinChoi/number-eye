@@ -129,7 +129,7 @@
   /* ROI 초점 박스 */
   #focusBox{
     position:absolute; left:50%; top:50%;
-    width:45%; aspect-ratio:1/1;
+    width:38%; aspect-ratio:1/1;
     transform: translate(-50%,-50%);
     border:2px solid rgba(255,255,255,.9);
     border-radius:10px;
@@ -919,10 +919,10 @@ const FOCUS_LERP = 0.20;              // 초점 스무딩
 
 // OCR 파라미터
 const OCR_W = 240, OCR_H = 240;
-const OCR_INTERVAL_MS = 500;
+const OCR_INTERVAL_MS = 600;  // 주기(로그는 1초)
 const OCR_HOLD_MS = 240;
 const OCR_MIN_CONF = 48;
-const BG_MIN_MEAN = 0;
+const BG_MIN_MEAN = 90;
               // ROI 평균 밝기 최소(하얀 종이 조건 힌트)
 
 let camStream = null, camOn = false, camRAF = null;
@@ -1149,7 +1149,14 @@ function startDetectLoop(){
         frameConf = out.conf;
       }
 
-      
+      // 1초 주기 디버그 로그: 현재 프레임에서 가장 가까운 숫자와 신뢰도 표시
+      if (now - lastDigitLogTs >= 1000){
+        lastDigitLogTs = now;
+        const logDigit = frameDigit != null ? frameDigit : '-';
+        const logConf  = frameConf != null ? frameConf.toFixed(1) : 0;
+        log(`number : ${logDigit} ${logConf}%`);
+      }
+
       if (candDigit !== frameDigit){ candDigit = frameDigit; candSince = now; }
       if ((now - candSince) >= OCR_HOLD_MS && activeDigit !== frameDigit){
         activeDigit = frameDigit;
