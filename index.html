@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
 <meta charset="utf-8" />
-<title>XROBO BLE — Digit OCR Edition (OCR v5 fix)</title>
+<title>XROBO BLE — Digit OCR Edition</title>
 <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no" />
 <script src="https://unpkg.com/blockly/blockly.min.js"></script>
 <!-- Tesseract.js for in-browser OCR (digit-only) -->
@@ -10,21 +10,16 @@
 <style>
 
 /* === PATCH: overlay split styles === */
-/* 실행(오버레이)일 때만 카메라 + 로그 2분할 */
 #playOverlay.show .body{
   display:grid;
   grid-template-columns: 1fr minmax(260px, 32vw);
   gap:0;
   height:100%;
 }
-#playOverlay.show video#eyesCam{
+#playOverlay video#eyesCam{
   position:relative;
-  left:auto;
-  right:auto;
-  top:auto;
-  bottom:auto;
-  width:100%;
-  height:100%;
+  left:auto; right:auto; top:auto; bottom:auto;
+  width:100%; height:100%;
   object-fit:contain;
   background:#000;
   transform: scaleX(-1);
@@ -87,7 +82,7 @@
   }
 }
 
-/* === PATCH: hide focus box & eyes stage === */
+/* === PATCH: hide focus box & eyes stage (사각형/눈 UI 숨김) === */
 #focusBox{display:none !important;}
 #eyesStage{display:none !important;}
 
@@ -119,7 +114,6 @@
     --keyGap: 6px;
     --keyFont: 14px;
 
-    /* 기본 눈 변수(코딩 화면에서는 사용 안 함, 오버레이에서만 씀) */
     --eyesGap: 8vmin;
     --eyeSize: 42vmin;
     --pupilSize: 16vmin;
@@ -161,7 +155,11 @@
     background:#f3f4f6; color:#111827; cursor:pointer;
     user-select:none;
   }
-  .btn.small{ height: calc(var(--btnH) * var(--uiScale) * .85); padding: 0 calc(10px * var(--uiScale)); font-size: calc(12px * var(--uiScale)); }
+  .btn.small{
+    height: calc(var(--btnH) * var(--uiScale) * .85);
+    padding: 0 calc(10px * var(--uiScale));
+    font-size: calc(12px * var(--uiScale));
+  }
   #connectToggle{ background:#2563eb; color:#fff; }
   #testBtn{ background:#0ea5e9; color:#fff; }
   #runToggle{ background:#16a34a; color:#fff; }
@@ -186,28 +184,83 @@
   .badgeDot.off{ background:#ef4444; }
 
   /* ── 레이아웃 ─────────────────────────── */
-  #main{ display:flex; width:100%; height: calc(100vh - var(--headerH)); }
-  #left{ position:relative; flex:1 1 auto; min-width:0; height:100%; display:flex; overflow:visible; }
-  #blocklyDiv{ flex:1 1 auto; min-width:0; height:100%; width:100%; }
+  #main{
+    display:flex;
+    width:100%;
+    height: calc(100vh - var(--headerH));
+  }
+  #left{
+    position:relative;
+    flex:1 1 auto;
+    min-width:0;
+    height:100%;
+    display:flex;
+    overflow:visible;
+  }
+  #blocklyDiv{
+    flex:1 1 auto;
+    min-width:0;
+    height:100%;
+    width:100%;
+  }
 
   #right{
-    flex:0 0 40%; display:flex; flex-direction:column; background:#fff;
-    margin:8px 8px 8px 0; border:1px solid #e5e7eb; border-left:3px solid var(--blue);
-    border-radius:12px 0 0 12px; box-shadow:0 2px 10px rgba(0,0,0,.04); overflow:hidden;
+    flex:0 0 40%;
+    display:flex;
+    flex-direction:column;
+    background:#fff;
+    margin:8px 8px 8px 0;
+    border:1px solid #e5e7eb;
+    border-left:3px solid var(--blue);
+    border-radius:12px 0 0 12px;
+    box-shadow:0 2px 10px rgba(0,0,0,.04);
+    overflow:hidden;
     position:relative;
   }
 
   /* ── 우측 상단: 카메라 프리뷰 ── */
   #rightTop{
-    flex:1 1 auto; border-bottom:1px solid #e5e7eb; min-height: 120px;
-    background:#0b0f14; color:#fff;
-    display:flex; align-items:center; justify-content:center;
-    padding: 0; overflow:hidden;
+    flex:1 1 auto;
+    border-bottom:1px solid #e5e7eb;
+    min-height: 120px;
+    background:#0b0f14;
+    color:#fff;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding: 0;
+    overflow:hidden;
   }
-  .camWrap{ position:relative; width:100%; height:100%; display:flex; align-items:center; justify-content:center; background:#000; }
-  #camVideo{ width:100%; height:100%; object-fit:cover; transform: scaleX(-1); background:#000; }
-  .camUi{ position:absolute; right:12px; top:12px; display:flex; gap:8px; align-items:center; z-index:2; }
-  .camBadge{ font: 700 12px/1 system-ui; color:#fff; padding:.35rem .6rem; border-radius:999px; border:1px solid rgba(255,255,255,.3); background:rgba(0,0,0,.35); backdrop-filter: blur(6px) }
+  .camWrap{
+    position:relative;
+    width:100%;
+    height:100%;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background:#000;
+  }
+  #camVideo{
+    width:100%; height:100%;
+    object-fit:cover;
+    transform: scaleX(-1);
+    background:#000;
+  }
+  .camUi{
+    position:absolute;
+    right:12px; top:12px;
+    display:flex; gap:8px; align-items:center;
+    z-index:2;
+  }
+  .camBadge{
+    font: 700 12px/1 system-ui;
+    color:#fff;
+    padding:.35rem .6rem;
+    border-radius:999px;
+    border:1px solid rgba(255,255,255,.3);
+    background:rgba(0,0,0,.35);
+    backdrop-filter: blur(6px)
+  }
 
   /* ROI 초점 박스 (지금은 CSS로 숨김 처리됨) */
   #focusBox{
@@ -223,19 +276,29 @@
   /* 카메라 숫자 읽기 배지(우측 패널) */
   #digitReadout{
     position:absolute; left:50%; transform:translateX(-50%);
-    bottom:12px; z-index:2; display:inline-flex; align-items:center; gap:.55rem;
+    bottom:12px; z-index:2;
+    display:inline-flex; align-items:center; gap:.55rem;
     font: 800 13px/1 system-ui; color:#fff;
-    padding:.48rem .8rem; border-radius:999px; border:1px solid rgba(255,255,255,.35);
-    background:rgba(0,0,0,.35); backdrop-filter: blur(6px);
+    padding:.48rem .8rem;
+    border-radius:999px;
+    border:1px solid rgba(255,255,255,.35);
+    background:rgba(0,0,0,.35);
+    backdrop-filter: blur(6px);
   }
   #digitReadout .value{
     font: 900 18px/1.1 ui-monospace, Menlo, Consolas, monospace;
-    padding: 2px 8px; border-radius: 8px; background: rgba(255,255,255,.12);
+    padding: 2px 8px;
+    border-radius: 8px;
+    background: rgba(255,255,255,.12);
     box-shadow: 0 0 0 2px rgba(255,255,255,.18) inset;
   }
 
-  /* 리사이저 바 */
-  #rightDivider{ flex:0 0 6px; cursor: row-resize; background: repeating-linear-gradient(90deg, #d1d5db 0, #d1d5db 6px, #e5e7eb 6px, #e5e7eb 12px); }
+  /* 리사이저 바 (로그 높이 조절) */
+  #rightDivider{
+    flex:0 0 6px;
+    cursor: row-resize;
+    background: repeating-linear-gradient(90deg, #d1d5db 0, #d1d5db 6px, #e5e7eb 6px, #e5e7eb 12px);
+  }
 
   /* 로그 패널 */
   #rightBottom{
@@ -252,7 +315,7 @@
     font-size: calc(12px * var(--uiScale)); color:#d1e4ff;
   }
 
-  /* 실행창 토글 핸들 (현재는 CSS로 숨김 처리) */
+  /* 실행창 토글 핸들 (지금은 숨김 상태, 슬라이더만 사용) */
   #panelHandle{
     position:absolute; top: calc(12px * var(--uiScale)); right: 0;
     z-index:999; width: var(--handleW); height: var(--handleH);
@@ -289,23 +352,21 @@
   #playOverlay{
     position:fixed; inset:0; background:#000; color:#fff; display:none; z-index:10000;
     touch-action:none; overscroll-behavior:contain; -webkit-tap-highlight-color:transparent;
-    /* 오버레이 전용: 눈 60% 축소(변수로 직접 덮어쓰기) */
-    --eyesGap: 4.8vmin;            /* 8vmin * 0.6 */
-    --eyeSize: 25.2vmin;           /* 42vmin * 0.6 */
-    --pupilSize: 9.6vmin;          /* 16vmin * 0.6 */
+    --eyesGap: 4.8vmin;
+    --eyeSize: 25.2vmin;
+    --pupilSize: 9.6vmin;
     --blinkSpeed: 180ms;
   }
   @media (orientation: landscape){
     #playOverlay{
-      --eyesGap: calc(4.8vmin * 2);          /* 가로에서 간격 2배 */
-      --eyeSize: calc(25.2vmin * 1.5);       /* 가로에서 기본 1.5배 */
+      --eyesGap: calc(4.8vmin * 2);
+      --eyeSize: calc(25.2vmin * 1.5);
       --pupilSize: calc(9.6vmin * 1.5);
     }
   }
   #playOverlay.show{ display:flex; flex-direction:column; }
   #playOverlay .body{ flex:1 1 auto; display:flex; align-items:center; justify-content:center; background:#000; }
 
-  /* 눈동자 UI (변수 기반 크기) */
   #eyesStage{ width:100%; height:100%; display:grid; place-items:center; background:#000; }
   .eyes{ display:grid; grid-auto-flow:column; align-items:center; gap: var(--eyesGap); }
   .eye{
@@ -334,7 +395,8 @@
   /* 전체화면 숫자 배지 */
   #overlayDigitBadge{
     position: fixed; left:50%; transform:translateX(-50%);
-    bottom: calc(12px + env(safe-area-inset-bottom)); z-index: 10001;
+    bottom: calc(12px + env(safe-area-inset-bottom));
+    z-index: 10001;
     display: none;
     font: 700 14px/1 system-ui; color:#fff; padding:.5rem .8rem; border-radius: 999px;
     border:1px solid rgba(255,255,255,.3); background: rgba(0,0,0,.35); backdrop-filter: blur(6px);
@@ -370,9 +432,9 @@
   #fileBtn{ background:#6b7280; color:#ffffff; }
 </style>
 
+<!-- 좌우 크기 슬라이더 -->
 <style id="xrobo-hsplit-style">
   :root{ --rightW: 40%; } /* initial right width */
-  /* central vertical bar */
   #hResizer{
     flex: 0 0 8px;
     background: linear-gradient(90deg,#e5e7eb,#d1d5db);
@@ -382,17 +444,24 @@
     touch-action: none;
     margin: 8px 0;
   }
-  body.hs-resizing, body.hs-resizing *{ cursor: col-resize !important; user-select: none !important; }
-  /* right panel width controlled by CSS var (allow collapse to 0) */
-  #right{ flex: 0 0 var(--rightW) !important; width: var(--rightW) !important; min-width: 0 !important; }
+  body.hs-resizing, body.hs-resizing *{
+    cursor: col-resize !important;
+    user-select: none !important;
+  }
+  #right{
+    flex: 0 0 var(--rightW) !important;
+    width: var(--rightW) !important;
+    min-width: 0 !important;
+  }
 </style>
+
 <style id="single-change-hide-handle">
-  /* 기존 열기/닫기 버튼 숨김 */
+  /* 기존 열기/닫기 버튼 숨김 (슬라이더만 사용) */
   #panelHandle { display: none !important; }
 </style>
 
+<!-- 안드로이드 숫자 키패드 스타일 (원래 코드 유지) -->
 <style id="xrobo-kp4x4-v14-style">
-  /* 4x4 키패드 (전화패드 스타일 + 외곽 라인) - 전역 70% 축소 */
   :root { --xroboKpScale: .7; }
   #xrobo-kp4x4-v14{
     position:absolute; left:0; top:0; display:none; z-index:2147483647;
@@ -437,7 +506,7 @@
       <div class="dropdown" id="fileDropdown">
         <button id="fileBtn" class="btn" title="파일">파일 ▾</button>
         <div id="fileMenu" class="menu" role="menu" aria-hidden="true">
-          <button data-cmd="new" role="menuitem">새로만들기</button>
+          <button data-cmd="new"  role="menuitem">새로만들기</button>
           <button data-cmd="save" role="menuitem">저장하기</button>
           <button data-cmd="load" role="menuitem">불러오기</button>
         </div>
@@ -448,7 +517,7 @@
 
       <!-- 테스트/실행 -->
       <button id="testBtn" class="btn" title="코딩 화면에서 테스트 실행">테스트</button>
-      <button id="runToggle" class="btn" title="전체화면 눈동자 실행">실행</button>
+      <button id="runToggle"  class="btn" title="전체화면 인식 실행">실행</button>
 
       <button id="fsBtn" class="btn" title="전체화면">전체화면</button>
     </div>
@@ -491,7 +560,9 @@
     </category>
     <category name="출력" colour="#60a5fa">
       <block type="motor12_dd">
-        <field name="M1">20</field><field name="M2">20</field><field name="MS">500</field>
+        <field name="M1">20</field>
+        <field name="M2">20</field>
+        <field name="MS">500</field>
       </block>
       <block type="motor12_in">
         <value name="M1"><shadow type="math_number"><field name="NUM">20</field></shadow></value>
@@ -519,34 +590,41 @@
     </category>
   </xml>
 
-  <!-- 전체화면 오버레이: 숫자 인식 + 로그 -->
+  <!-- 전체화면 오버레이: 카메라 + 실행로그 -->
   <div id="playOverlay" aria-hidden="true">
     <div class="body">
-      <!-- 처리용 전면 카메라 -->
+      <!-- 처리용 전면 카메라(전체 프레임 인식) -->
       <video id="eyesCam" playsinline muted autoplay></video>
       <!-- 오른쪽 실행 로그 패널 -->
       <div id="ovRight" class="ov-right-panel" aria-label="실행 로그 영역">
         <div class="ov-header">실행 로그</div>
         <div id="ovLog" class="ov-log" role="log" aria-live="polite" aria-atomic="false"></div>
+        <div id="overlayDigitBadge"><span class="label">숫자</span> <span class="value">—</span></div>
       </div>
-      <!-- 눈동자 (지금은 CSS로 숨김) -->
+      <!-- (눈 UI는 숨김 상태지만 원래 구조는 유지) -->
       <div id="eyesStage" aria-label="귀여운 눈동자">
         <div class="eyes">
           <div class="eye"><div class="pupil"><div class="shine"></div></div><div class="eyelid"></div></div>
           <div class="eye"><div class="pupil"><div class="shine"></div></div><div class="eyelid"></div></div>
         </div>
       </div>
-      <!-- 전체화면 숫자 배지 -->
-      <div id="overlayDigitBadge"><span class="label">숫자</span> <span class="value">—</span></div>
     </div>
   </div>
 
 <script>
 /* ================= Blockly 기본 설정 ================= */
-class XroboZelosProvider extends Blockly.zelos.ConstantProvider { constructor(){ super(); this.ADD_START_HATS = true; } }
-class XroboZelosRenderer extends Blockly.zelos.Renderer { constructor(){ super('xrobo_zelos'); } makeConstants_(){ return new XroboZelosProvider(); } }
+class XroboZelosProvider extends Blockly.zelos.ConstantProvider {
+  constructor(){ super(); this.ADD_START_HATS = true; }
+}
+class XroboZelosRenderer extends Blockly.zelos.Renderer {
+  constructor(){ super('xrobo_zelos'); }
+  makeConstants_(){ return new XroboZelosProvider(); }
+}
 Blockly.blockRendering.register('xrobo_zelos', XroboZelosRenderer);
-const XroboTheme = Blockly.Theme.defineTheme('xrobo_theme', { base: Blockly.Themes.Zelos, componentStyles: { startHats: true }});
+const XroboTheme = Blockly.Theme.defineTheme('xrobo_theme', {
+  base: Blockly.Themes.Zelos,
+  componentStyles: { startHats: true }
+});
 
 var ws = Blockly.inject('blocklyDiv', {
   toolbox: document.getElementById('toolbox'),
@@ -599,65 +677,121 @@ var LED_VALS=Array.from({length:20},(_,i)=>[String(i),String(i)]);
 
 /* ================= 블록 정의 ================= */
 const DIGIT_OPTIONS = Array.from({length:10}, (_,i)=>[String(i), 'D'+i]);
+
 Blockly.defineBlocksWithJsonArray([
-  { "type":"xrobo_start", "message0":"숫자 %1 이 보이면",
+  { "type":"xrobo_start",
+    "message0":"숫자 %1 이 보이면",
     "args0":[{ "type":"field_dropdown","name":"DIGIT","options": DIGIT_OPTIONS }],
     "nextStatement":null, "colour":36, "hat":"cap"
   },
   { "type":"motor12_dd","message0":"모터 M1 %1  M2 %2  시간 %3 ms",
-    "args0":[{"type":"field_dropdown","name":"M1","options":SPEEDS},{"type":"field_dropdown","name":"M2","options":SPEEDS},{"type":"field_dropdown","name":"MS","options":TIMES100}],
-    "previousStatement":null,"nextStatement":null,"inputsInline":true,"colour":210 },
+    "args0":[
+      {"type":"field_dropdown","name":"M1","options":SPEEDS},
+      {"type":"field_dropdown","name":"M2","options":SPEEDS},
+      {"type":"field_dropdown","name":"MS","options":TIMES100}
+    ],
+    "previousStatement":null,"nextStatement":null,"inputsInline":true,"colour":210
+  },
   { "type":"motor12_in","message0":"모터 M1 %1  M2 %2  시간 %3 ms",
-    "args0":[{"type":"input_value","name":"M1","check":"Number"},{"type":"input_value","name":"M2","check":"Number"},{"type":"input_value","name":"MS","check":"Number"}],
-    "previousStatement":null,"nextStatement":null,"inputsInline":true,"colour":210 },
+    "args0":[
+      {"type":"input_value","name":"M1","check":"Number"},
+      {"type":"input_value","name":"M2","check":"Number"},
+      {"type":"input_value","name":"MS","check":"Number"}
+    ],
+    "previousStatement":null,"nextStatement":null,"inputsInline":true,"colour":210
+  },
   { "type":"melody","message0":"멜로디 음높이 %1 소리시간 %2 ms 대기시간 %3 ms",
-    "args0":[{"type":"field_dropdown","name":"PITCH","options":(function(){var KR=["도","레","미","파","솔","라","시"], EN=["C","D","E","F","G","A","B"], L=[]; for(var o=4;o<=6;o++) for(var i=0;i<7;i++) L.push([KR[i]+o, EN[i]+o]); return L;})()},
-             {"type":"input_value","name":"DUR","check":"Number"},{"type":"input_value","name":"WAIT","check":"Number"}],
-    "previousStatement":null,"nextStatement":null,"inputsInline":true,"colour":300 },
+    "args0":[
+      {"type":"field_dropdown","name":"PITCH","options":(function(){
+        var KR=["도","레","미","파","솔","라","시"], EN=["C","D","E","F","G","A","B"], L=[];
+        for(var o=4;o<=6;o++) for(var i=0;i<7;i++) L.push([KR[i]+o, EN[i]+o]);
+        return L;
+      })()},
+      {"type":"input_value","name":"DUR","check":"Number"},
+      {"type":"input_value","name":"WAIT","check":"Number"}
+    ],
+    "previousStatement":null,"nextStatement":null,"inputsInline":true,"colour":300
+  },
   { "type":"led_ctrl","message0":"LED %1 모드 %2 값 %3",
-    "args0":[{"type":"field_dropdown","name":"TGT","options":LED_TGT},{"type":"field_dropdown","name":"MODE","options":LED_MODE},{"type":"field_dropdown","name":"VAL","options":LED_VALS}],
-    "previousStatement":null,"nextStatement":null,"inputsInline":true,"colour":330 },
+    "args0":[
+      {"type":"field_dropdown","name":"TGT","options":LED_TGT},
+      {"type":"field_dropdown","name":"MODE","options":LED_MODE},
+      {"type":"field_dropdown","name":"VAL","options":LED_VALS}
+    ],
+    "previousStatement":null,"nextStatement":null,"inputsInline":true,"colour":330
+  },
   { "type":"wait_seconds","message0":"%1 초 기다리기",
     "args0":[{"type":"input_value","name":"SEC","check":"Number"}],
-    "previousStatement":null,"nextStatement":null,"inputsInline":true,"colour":120 }
+    "previousStatement":null,"nextStatement":null,"inputsInline":true,"colour":120
+  }
 ]);
 
 /* ================= 코드 빌더 ================= */
-function numFromInput(parent, name, def){ if (def===void 0) def=0;
+function numFromInput(parent, name, def){
+  if (def===void 0) def=0;
   var raw = Blockly.JavaScript.valueToCode(parent, name, Blockly.JavaScript.ORDER_NONE);
-  var n = Number(raw != null ? raw : ''); return (isFinite(n) ? n : def);
+  var n = Number(raw != null ? raw : '');
+  return (isFinite(n) ? n : def);
 }
 function walkNode(b, list){
   if(!b) return;
   switch(b.type){
     case 'motor12_dd':{
       var v1=+b.getFieldValue('M1'),v2=+b.getFieldValue('M2'),ms=+b.getFieldValue('MS');
-      list.push({type:'CMD',s:'M12 '+v1+' '+v2+' '+ms}); if(ms>0) list.push({type:'W',args:[ms]}); break; }
+      list.push({type:'CMD',s:'M12 '+v1+' '+v2+' '+ms});
+      if(ms>0) list.push({type:'W',args:[ms]});
+      break;
+    }
     case 'motor12_in':{
-      var v1n=numFromInput(b,'M1',0),v2n=numFromInput(b,'M2',0),msn=numFromInput(b,'MS',0);
-      list.push({type:'CMD',s:'M12 '+Math.round(v1n)+' '+Math.round(v2n)+' '+Math.round(msn)}); if(msn>0) list.push({type:'W',args:[msn]}); break; }
+      var v1n=numFromInput(b,'M1',0),
+          v2n=numFromInput(b,'M2',0),
+          msn=numFromInput(b,'MS',0);
+      list.push({type:'CMD',s:'M12 '+Math.round(v1n)+' '+Math.round(v2n)+' '+Math.round(msn)});
+      if(msn>0) list.push({type:'W',args:[msn]});
+      break;
+    }
     case 'melody':{
-      var p=b.getFieldValue('PITCH'),dur=numFromInput(b,'DUR',200),wait=numFromInput(b,'WAIT',0);
-      list.push({type:'CMD',s:'MEL '+p+' '+Math.round(dur)+' '+Math.round(wait)}); if(wait>0) list.push({type:'W',args:[wait]}); break; }
+      var p=b.getFieldValue('PITCH'),
+          dur=numFromInput(b,'DUR',200),
+          wait=numFromInput(b,'WAIT',0);
+      list.push({type:'CMD',s:'MEL '+p+' '+Math.round(dur)+' '+Math.round(wait)});
+      if(wait>0) list.push({type:'W',args:[wait]});
+      break;
+    }
     case 'led_ctrl':{
-      var t=b.getFieldValue('TGT'),m=b.getFieldValue('MODE'),v=+b.getFieldValue('VAL');
-      list.push({type:'CMD',s:'LED '+t+' '+m+' '+v}); break; }
+      var t=b.getFieldValue('TGT'),
+          m=b.getFieldValue('MODE'),
+          v=+b.getFieldValue('VAL');
+      list.push({type:'CMD',s:'LED '+t+' '+m+' '+v});
+      break;
+    }
     case 'controls_repeat_ext':{
       var times=Math.max(0, numFromInput(b,'TIMES',1));
       var inner=[]; var first=b.getInputTargetBlock('DO'); walkChain(first, inner);
-      list.push({type:'FOR',count:times,body:inner}); break; }
+      list.push({type:'FOR',count:times,body:inner});
+      break;
+    }
     case 'wait_seconds':{
-      var s=numFromInput(b,'SEC',1); if(s>0) list.push({type:'W',args:[s*1000]}); break; }
+      var s=numFromInput(b,'SEC',1);
+      if(s>0) list.push({type:'W',args:[s*1000]});
+      break;
+    }
   }
 }
-function walkChain(start, list){ for(var n=start; n; n=n.getNextBlock()) walkNode(n, list); }
+function walkChain(start, list){
+  for(var n=start; n; n=n.getNextBlock()) walkNode(n, list);
+}
 function normalizeProgram(list){
-  var out=[]; for(var i=0;i<list.length;i++){
+  var out=[];
+  for(var i=0;i<list.length;i++){
     var ins=list[i];
-    if(ins.type==='CMD'){ var prev=out[out.length-1]; if(prev && prev.type==='CMD' && prev.s===ins.s) continue; }
-    else if(ins.type==='W'){
+    if(ins.type==='CMD'){
+      var prev=out[out.length-1];
+      if(prev && prev.type==='CMD' && prev.s===ins.s) continue;
+    }else if(ins.type==='W'){
       if(!isFinite(ins.args && ins.args[0]) || ins.args[0]<=0) continue;
-      var prevw=out[out.length-1]; if(prevw && prevw.type==='W'){ prevw.args[0]+=ins.args[0]; continue; }
+      var prevw=out[out.length-1];
+      if(prevw && prevw.type==='W'){ prevw.args[0]+=ins.args[0]; continue; }
     }
     out.push(ins);
   }
@@ -673,15 +807,6 @@ function buildEventPrograms(){
     var norm = normalizeProgram(prog);
     programs[code] = programs[code].concat(norm);
   }
-
-  // 어떤 숫자에 몇 개 명령이 연결됐는지 로그로 보여주기
-  log('🧩 이벤트 테이블 갱신');
-  Object.keys(programs).forEach(function(k){
-    if(programs[k].length){
-      log('   - 숫자 '+k.substring(1)+' : '+programs[k].length+'개 명령');
-    }
-  });
-
   return programs;
 }
 
@@ -699,7 +824,9 @@ function applyUiScaleFromWorkspace(){
 window.addEventListener('resize', applyHeaderHeight);
 document.addEventListener('fullscreenchange', applyHeaderHeight);
 ws.addChangeListener(function(ev){
-  if(ev && ev.type===Blockly.Events.UI && ev.element==='zoom'){ applyUiScaleFromWorkspace(); }
+  if(ev && ev.type===Blockly.Events.UI && ev.element==='zoom'){
+    applyUiScaleFromWorkspace();
+  }
 });
 setInterval(function(){ applyUiScaleFromWorkspace(); }, 200);
 applyUiScaleFromWorkspace();
@@ -711,26 +838,24 @@ var bleDevice=null,bleServer=null,bleService=null,writeChar=null,notifyChar=null
 var isConnected=false, isRunning=false, isFullscreenRun=false;
 var $=id=>document.getElementById(id);
 
-/* === 수정: 메인 로그 + 오버레이 로그 동시에 찍기 === */
+/* 로그: 메인/오버레이 동시 출력 */
 var log=function(m){
   var L=$('log');
-  if(L){
-    L.textContent+=m+"\n";
-    L.scrollTop=L.scrollHeight;
-  }
+  if(L){ L.textContent+=m+"\n"; L.scrollTop=L.scrollHeight; }
   var OL=$('ovLog');
-  if(OL){
-    OL.textContent+=m+"\n";
-    OL.scrollTop=OL.scrollHeight;
-  }
+  if(OL){ OL.textContent+=m+"\n"; OL.scrollTop=OL.scrollHeight; }
 };
 
 var dot=$('statusDot');
-var btnConnect=$('connectToggle'), btnRun=$('runToggle'), btnTest=$('testBtn');
+var btnConnect=$('connectToggle'),
+    btnRun    =$('runToggle'),
+    btnTest   =$('testBtn');
 
 var enc = s=> new TextEncoder().encode(s);
 
-function resetBleRefs(){ bleDevice=null; bleServer=null; bleService=null; writeChar=null; notifyChar=null; }
+function resetBleRefs(){
+  bleDevice=null; bleServer=null; bleService=null; writeChar=null; notifyChar=null;
+}
 function setConnected(v){
   isConnected=v;
   btnConnect.textContent=v?'해제':'연결';
@@ -747,13 +872,24 @@ function setRunning(v){
 
 /* BLE connect/disconnect */
 function connectBLE(){
-  if(!navigator.bluetooth){ alert('이 브라우저는 Web Bluetooth 미지원입니다.'); return; }
+  if(!navigator.bluetooth){
+    alert('이 브라우저는 Web Bluetooth 미지원입니다.');
+    return;
+  }
   (async function(){
     try{
-      var dev = await navigator.bluetooth.requestDevice({ filters:[{ namePrefix:'XROBO' }], optionalServices:[SERVICE_UUID, 0xFFF3, 0xFFF4] });
-      try{ if (bleDevice && bleDevice.removeEventListener){ bleDevice.removeEventListener('gattserverdisconnected', onDisconnected); } }catch(e){}
-      resetBleRefs(); bleDevice=dev;
-      if (bleDevice && bleDevice.addEventListener){ bleDevice.addEventListener('gattserverdisconnected', onDisconnected); }
+      var dev = await navigator.bluetooth.requestDevice({
+        filters:[{ namePrefix:'XROBO' }],
+        optionalServices:[SERVICE_UUID, 0xFFF3, 0xFFF4]
+      });
+      try{ if (bleDevice && bleDevice.removeEventListener){
+        bleDevice.removeEventListener('gattserverdisconnected', onDisconnected);
+      }}catch(e){}
+      resetBleRefs();
+      bleDevice=dev;
+      if (bleDevice && bleDevice.addEventListener){
+        bleDevice.addEventListener('gattserverdisconnected', onDisconnected);
+      }
 
       bleServer=await bleDevice.gatt.connect();
       bleService=await bleServer.getPrimaryService(SERVICE_UUID);
@@ -773,20 +909,33 @@ function connectBLE(){
         await notifyChar.startNotifications();
         if (notifyChar.addEventListener){
           notifyChar.addEventListener('characteristicvaluechanged',function(ev){
-            try{ var v=new TextDecoder().decode(ev.target.value||new Uint8Array()); log('⬅️ '+v.trim()); }catch(e){}
+            try{
+              var v=new TextDecoder().decode(ev.target.value||new Uint8Array());
+              log('⬅️ '+v.trim());
+            }catch(e){}
           });
         }
       }
       setConnected(true);
       log('✅ 연결: '+(dev.name||'(이름 없음)'));
     }catch(e){
-      console.error(e); log('❌ 연결 실패: '+e);
-      setConnected(false); resetBleRefs();
+      console.error(e);
+      log('❌ 연결 실패: '+e);
+      setConnected(false);
+      resetBleRefs();
     }
   })();
 }
-function onDisconnected(){ log('🔌 해제됨'); setConnected(false); resetBleRefs(); }
-function disconnectBLE(){ try{ if (bleDevice && bleDevice.gatt) bleDevice.gatt.disconnect(); }catch(e){} setConnected(false); resetBleRefs(); }
+function onDisconnected(){
+  log('🔌 해제됨');
+  setConnected(false);
+  resetBleRefs();
+}
+function disconnectBLE(){
+  try{ if (bleDevice && bleDevice.gatt) bleDevice.gatt.disconnect(); }catch(e){}
+  setConnected(false);
+  resetBleRefs();
+}
 btnConnect.onclick = ()=> isConnected ? disconnectBLE() : connectBLE();
 
 /* ================= 저장/불러오기 ================= */
@@ -801,17 +950,23 @@ function saveProject(){
   if(window.showSaveFilePicker){
     (async function(){
       try{
-        var handle = await showSaveFilePicker({ suggestedName, types:[{description:'XROBO Project', accept:{'application/json':['.json']}}] });
+        var handle = await showSaveFilePicker({
+          suggestedName,
+          types:[{description:'XROBO Project', accept:{'application/json':['.json']}}]
+        });
         var stream = await handle.createWritable();
         await stream.write(new Blob([data], {type:'application/json'}));
         await stream.close();
         log('💾 저장 완료');
-      }catch(e){ if(!(e && e.name==='AbortError')) log('⚠️ 저장 실패: '+e); }
+      }catch(e){
+        if(!(e && e.name==='AbortError')) log('⚠️ 저장 실패: '+e);
+      }
     })();
   }else{
     var a=document.createElement('a');
     a.href=URL.createObjectURL(new Blob([data], {type:'application/json'}));
-    a.download=suggestedName; a.click();
+    a.download=suggestedName;
+    a.click();
     setTimeout(()=>{ URL.revokeObjectURL(a.href); }, 1000);
     log('💾 저장(다운로드) 완료');
   }
@@ -821,14 +976,20 @@ function loadProject(){
     try{
       var text='';
       if(window.showOpenFilePicker){
-        var arr = await showOpenFilePicker({ types:[{description:'XROBO Project', accept:{'application/json':['.json']}}] });
+        var arr = await showOpenFilePicker({
+          types:[{description:'XROBO Project', accept:{'application/json':['.json']}}]
+        });
         var handle = arr[0];
         var file = await handle.getFile();
         text = await file.text();
       }else{
         var input=document.createElement('input');
-        input.type='file'; input.accept='.json,application/json';
-        var pick = new Promise((res,rej)=>{ input.onchange=()=>{ res(input.files[0]||null); }; input.onerror=rej; });
+        input.type='file';
+        input.accept='.json,application/json';
+        var pick = new Promise((res,rej)=>{
+          input.onchange=()=>{ res(input.files[0]||null); };
+          input.onerror=rej;
+        });
         input.click();
         var file = await pick;
         if(!file) return;
@@ -846,7 +1007,8 @@ function loadProject(){
     }
   })();
 }
-/* ================= 오른쪽 패널: 리사이저 ================= */
+
+/* ================= 오른쪽 패널: 로그 높이 리사이저 ================= */
 (function(){
   var divider = document.getElementById('rightDivider');
   var root = document.documentElement;
@@ -890,13 +1052,22 @@ function syncHandle(){
   panelHandle.classList.toggle('closed',  collapsed);
   panelHandle.title = collapsed ? '실행창 열기' : '실행창 닫기';
 }
-function togglePanel(){ document.body.classList.toggle('panel-collapsed'); syncHandle(); setTimeout(()=>{ Blockly.svgResize(ws); },60); }
+function togglePanel(){
+  document.body.classList.toggle('panel-collapsed');
+  syncHandle();
+  setTimeout(()=>{ Blockly.svgResize(ws); },60);
+}
 panelHandle.addEventListener('click', togglePanel);
 syncHandle();
 
 var fsBtn=document.getElementById('fsBtn');
-async function enterFS(){ var el=document.documentElement; if(el.requestFullscreen) await el.requestFullscreen(); }
-async function exitFS(){ if(document.fullscreenElement && document.exitFullscreen) await document.exitFullscreen(); }
+async function enterFS(){
+  var el=document.documentElement;
+  if(el.requestFullscreen) await el.requestFullscreen();
+}
+async function exitFS(){
+  if(document.fullscreenElement && document.exitFullscreen) await document.exitFullscreen();
+}
 function syncFSLabel(){
   var a = !!document.fullscreenElement;
   document.body.classList.toggle('fs-active', a);
@@ -904,7 +1075,10 @@ function syncFSLabel(){
   fsBtn.title = a ? '화면 축소로 전환' : '전체화면으로 전환';
   applyHeaderHeight();
 }
-fsBtn.onclick=async function(){ if(document.fullscreenElement) await exitFS(); else await enterFS(); };
+fsBtn.onclick=async function(){
+  if(document.fullscreenElement) await exitFS();
+  else await enterFS();
+};
 document.addEventListener('fullscreenchange', syncFSLabel);
 syncFSLabel();
 
@@ -916,17 +1090,28 @@ var queueBusy = false;
 var cancelToken = 0;
 
 function sendRaw(s){
-  if(!writeChar){ log('➡️(BLE 미연결) '+s); return Promise.resolve(); }
-  return writeChar.writeValue(enc(s+'\n')).then(()=>{ log('➡️ '+s); }).catch(e=>{ log('⚠️ 전송 실패: '+e); });
+  if(!writeChar){
+    log('➡️(BLE 미연결) '+s);
+    return Promise.resolve();
+  }
+  return writeChar.writeValue(enc(s+'\n'))
+    .then(()=>{ log('➡️ '+s); })
+    .catch(e=>{ log('⚠️ 전송 실패: '+e); });
 }
 async function runList(list, localToken){
   for(var i=0;i<list.length;i++){
     var ins=list[i];
     if(localToken !== cancelToken) return;
-    if(ins.type==='CMD'){ await sendRaw(ins.s); }
-    else if(ins.type==='W'){ var ms = (ins.args && ins.args[0]) ? ins.args[0] : 0; await new Promise(r=>setTimeout(r, ms)); }
-    else if(ins.type==='FOR'){
-      for(var k=0;k<ins.count;k++){ if(localToken !== cancelToken) return; await runList(ins.body, localToken); }
+    if(ins.type==='CMD'){
+      await sendRaw(ins.s);
+    }else if(ins.type==='W'){
+      var ms = (ins.args && ins.args[0]) ? ins.args[0] : 0;
+      await new Promise(r=>setTimeout(r, ms));
+    }else if(ins.type==='FOR'){
+      for(var k=0;k<ins.count;k++){
+        if(localToken !== cancelToken) return;
+        await runList(ins.body, localToken);
+      }
     }
   }
 }
@@ -938,32 +1123,39 @@ async function processQueue(localToken){
       var item = queue.shift();
       await runList(item.list, localToken);
     }
-  }finally{ queueBusy = false; }
+  }finally{
+    queueBusy = false;
+  }
 }
 
-/* 이벤트 테이블에서 시퀀스 가져오기 (필요시 재빌드) */
+/* 이벤트 시퀀스 가져오기 + 트리거 */
 function getEventSeq(name){
-  var seq = eventPrograms[name];
-  if(!seq || !seq.length){
-    eventPrograms = buildEventPrograms();
-    seq = eventPrograms[name];
+  if(!eventPrograms || !eventPrograms[name] || !eventPrograms[name].length){
+    try{ eventPrograms = buildEventPrograms(); }catch(e){}
   }
-  return seq;
+  return (eventPrograms && eventPrograms[name]) ? eventPrograms[name] : [];
 }
-function triggerEvent(name){
+function triggerEvent(name, conf){
+  var digitLabel = name && name.charAt && name.charAt(0)==='D' ? name.slice(1) : String(name||'');
+  if(typeof conf === 'number'){
+    log(`🎯 숫자 감지: ${digitLabel} (${conf.toFixed(1)}%)`);
+  }else{
+    log(`🎯 숫자 감지: ${digitLabel}`);
+  }
+
   if(!isRunning){
-    log('⏸ 실행 중이 아니라 이벤트를 실행하지 않습니다. ('+name+')');
+    log(`⏸ 실행 중이 아니라 이벤트를 실행하지 않습니다. (D${digitLabel})`);
     return;
   }
   var seq = getEventSeq(name);
-  if(seq && seq.length){
-    log('▶ 이벤트 '+name.replace(/^D/,'숫자 ')+' 실행 ('+seq.length+'개 명령)');
-    queue.push({list: seq.slice()});
-    var myToken = cancelToken;
-    processQueue(myToken);
-  }else{
-    log('⚠️ 이벤트 '+name.replace(/^D/,'숫자 ')+' 에 연결된 블록이 없습니다.');
+  if(!seq || !seq.length){
+    log(`⚠️ 이벤트 숫자 ${digitLabel} 에 연결된 블록이 없습니다.`);
+    return;
   }
+  log(`▶ 이벤트 숫자 ${digitLabel} 실행 (${seq.length}개 명령)`);
+  queue.push({list: seq.slice()});
+  var myToken = cancelToken;
+  processQueue(myToken);
 }
 
 /* 테스트 실행(코딩 화면) */
@@ -974,7 +1166,7 @@ function startTest(){
   isFullscreenRun = false;
   setRunning(true);
 }
-/* 전체화면 눈동자 실행 */
+/* 전체화면 실행 */
 let overlayStartedCam = false;
 async function startFullRun(){
   if(isRunning) return;
@@ -983,20 +1175,20 @@ async function startFullRun(){
   isFullscreenRun = true;
   setRunning(true);
 
-  // 오버레이 표시 + 전체화면 시도
   overlay.classList.add('show');
   overlay.setAttribute('aria-hidden','false');
   try{ if(overlay.requestFullscreen) await overlay.requestFullscreen(); }catch(e){}
 
-  // 카메라 자동 시작(없으면)
   overlayStartedCam = !camOn;
   if(!camOn){
     try{ await startCam(); }catch(e){ log('⚠️ 실행 중 카메라 시작 실패: '+e); }
   }
-  // 오버레이 비디오에 동일 스트림 공유
   try{
     const eyesCam = document.getElementById('eyesCam');
-    if(camStream) { eyesCam.srcObject = camStream; await eyesCam.play(); }
+    if(camStream){
+      eyesCam.srcObject = camStream;
+      await eyesCam.play();
+    }
   }catch(e){}
   startOverlayEyes();
 }
@@ -1004,73 +1196,68 @@ async function startFullRun(){
 async function stopRun(){
   cancelToken++; queue=[];
   setRunning(false);
-  stopOverlayEyes();                     // 눈동자 루프 정지 및 리스너 해제
-  overlay.classList.remove('show');      // 오버레이 숨김
+  stopOverlayEyes();
+  overlay.classList.remove('show');
   overlay.setAttribute('aria-hidden','true');
   isFullscreenRun = false;
   try{ if(document.fullscreenElement) await document.exitFullscreen(); }catch(e){}
   try{ if(writeChar) writeChar.writeValue(enc('S\n')); }catch(e){}
-  if(overlayStartedCam){ stopCam(); overlayStartedCam=false; }
+  if(overlayStartedCam){
+    stopCam();
+    overlayStartedCam=false;
+  }
 }
 
 /* 버튼 바인딩 */
 btnTest.onclick = ()=> { if(!isRunning) startTest(); };
 btnRun.onclick  = ()=> { if(!isRunning) startFullRun(); else stopRun(); };
 
-/* ===== 전체화면에서 백버튼/제스처로 FS 해제될 때 오버레이도 닫기 ===== */
+/* 전체화면 해제 시 자동 정지 */
 document.addEventListener('fullscreenchange', ()=>{
   if (isFullscreenRun && !document.fullscreenElement){
     stopRun();
   }
 });
-/* ESC로도 종료(데스크탑) */
 document.addEventListener('keydown', (e)=>{
   if (isFullscreenRun && e.key === 'Escape') stopRun();
 });
 
-/* ================= 카메라(패널): 전체 화면에서 숫자 인식 + 움직임 초점 ================= */
+/* ================= 카메라 & OCR ================= */
 const camWrap   = document.getElementById('camWrap');
 const camVideo  = document.getElementById('camVideo');
 const camToggle = document.getElementById('camToggle');
 const camBadge  = document.getElementById('camBadge');
-const focusBox  = document.getElementById('focusBox');
 const digitReadout = document.getElementById('digitReadout');
-const digitValEl = digitReadout.querySelector('.value');
+const digitValEl   = digitReadout.querySelector('.value');
 
-/* 공용 파라미터 (패널/오버레이 동일 사용) */
-const LOW_W = 64, LOW_H = 48;         // 다운샘플 크기 (모션만)
-const MASS_MIN = 12000;               // 모션 총량 임계
-const FOCUS_LERP = 0.20;              // 초점 스무딩
-
-// OCR 파라미터
 const OCR_W = 240, OCR_H = 240;
 const OCR_INTERVAL_MS = 420;
 const OCR_HOLD_MS = 240;
+
 /* 신뢰도 기준 */
-const OCR_MIN_CONF = 0;               // OCR 결과는 항상 반환
-const DIGIT_EVENT_MIN_CONF = 50;      // 이 값 이상일 때만 이벤트 실행
-const DIGIT_LOG_MIN_CONF   = 50;      // 이 값 이상일 때만 number 로그 출력
-const BG_MIN_MEAN = 90;               // ROI 평균 밝기 최소(하얀 종이 조건 힌트)
+const DETECT_LOG_MIN_CONF   = 50;  // 로그 출력
+const DETECT_EVENT_MIN_CONF = 50;  // 이벤트 실행
+const OCR_BASE_MIN_CONF     = 15;  // OCR 내부 최소값
+
+/* “글자 잉크” 비율 기준 */
+const DARK_MIN     = 0.02;  // 2% 이상 검정 픽셀 있을 때만 숫자 후보
+const DARK_MAX     = 0.55;  // 화면 거의 전체가 검정이면 무시
+const BG_MEAN_MIN  = 60;    // 평균 밝기가 너무 어두우면 무시
 
 let camStream = null, camOn = false, camRAF = null;
 
 const procCvs = document.createElement('canvas');
 const procCtx = procCvs.getContext('2d', { willReadFrequently:true });
-procCvs.width = LOW_W; procCvs.height = LOW_H;
+procCvs.width = 64; procCvs.height = 48; // (지금은 모션에 사용하지 않지만 유지)
 
-// OCR 작업용 캔버스(원본 해상도 ROI를 크게)
 const ocrCvs = document.createElement('canvas');
 const ocrCtx = ocrCvs.getContext('2d', { willReadFrequently:true });
 ocrCvs.width = OCR_W; ocrCvs.height = OCR_H;
 
-/* 모션용 간단 회색 변환 */
+/* 모션용 간단 회색 변환 (OCR에도 사용) */
 function toGray(r,g,b){ return (r*0.299 + g*0.587 + b*0.114)|0; }
 
 /* 상태 (패널) */
-let activeDigit = null, candDigit = null, candSince = 0, candConf = null;
-let fx=0.5, fy=0.5, fxT=0.5, fyT=0.5;
-let lastDigitLogTs = 0;
-
 function setCamBadge(t){ camBadge.textContent = 'Cam: ' + t; }
 function updateCamUi(){
   setCamBadge(camOn ? 'on' : 'off');
@@ -1080,6 +1267,7 @@ function updateDigitReadout(v){
   digitValEl.textContent = (v==null ? '—' : String(v));
 }
 
+/* 카메라 on/off */
 async function startCam(){
   if(camOn) return;
   try{
@@ -1090,9 +1278,10 @@ async function startCam(){
     camStream = stream;
     camVideo.srcObject = stream;
     await camVideo.play();
-    camOn = true; updateCamUi();
+    camOn = true;
+    updateCamUi();
     updateDigitReadout(null);
-    await ensureOcr();  // OCR 준비
+    await ensureOcr();
     startDetectLoop();
     log('🎥 카메라 켜짐');
   }catch(e){
@@ -1106,11 +1295,10 @@ function stopCam(){
     try{ camVideo.srcObject.getTracks().forEach(t=>t.stop()); }catch(_){}
     camVideo.srcObject = null;
   }
-  camStream = null; camOn=false; updateCamUi();
+  camStream = null;
+  camOn=false;
+  updateCamUi();
   if(camRAF){ cancelAnimationFrame(camRAF); camRAF=null; }
-  activeDigit=candDigit=null; candSince=0; candConf=null;
-  fx=fy=fxT=fyT=0.5; lastDigitLogTs=0;
-  focusBox.style.left='50%'; focusBox.style.top='50%'; focusBox.style.opacity='.15';
   updateDigitReadout(null);
   log('🛑 카메라 꺼짐');
 }
@@ -1125,18 +1313,19 @@ let ocrLastTs = 0;
 async function ensureOcr(){
   if(ocrReady) return;
   try{
-    // --- v5 우선: createWorker(lang, oem, options) 는 이미 로드/초기화된 worker를 반환합니다.
     try{
-      ocrWorker = await Tesseract.createWorker('eng', 1, { logger: m => { /* console.log(m); */ } });
+      // v5 스타일
+      ocrWorker = await Tesseract.createWorker('eng', 1, { logger: m => {} });
     }catch(_e){
-      // --- 구버전(v2) 폴백: load → loadLanguage → initialize
-      ocrWorker = Tesseract.createWorker({ logger: m => { /* console.log(m); */ } });
+      // v2 스타일 폴백
+      ocrWorker = Tesseract.createWorker({ logger: m => {} });
       if (ocrWorker.load)         await ocrWorker.load();
       if (ocrWorker.loadLanguage) await ocrWorker.loadLanguage('eng');
       if (ocrWorker.initialize)   await ocrWorker.initialize('eng');
     }
     if (ocrWorker.setParameters){
-      const psm = (Tesseract && Tesseract.PSM && Tesseract.PSM.SINGLE_CHAR) ? Tesseract.PSM.SINGLE_CHAR : 10;
+      const psm = (Tesseract && Tesseract.PSM && Tesseract.PSM.SINGLE_CHAR)
+        ? Tesseract.PSM.SINGLE_CHAR : 10;
       await ocrWorker.setParameters({
         tessedit_char_whitelist: '0123456789',
         tessedit_pageseg_mode: psm,
@@ -1150,158 +1339,132 @@ async function ensureOcr(){
   }
 }
 
-/* ROI 좌표(원본 비디오 해상도 기준) 계산 */
-function getRoiRectFromFocus(video, fracW=0.45, fracH=0.45){
+/* 프레임 전체를 OCR 캔버스로 전처리 + 잉크 비율 계산 */
+function preprocessToOcrCanvas(video){
   const vw = Math.max(1, video.videoWidth || 320);
-  const vh = Math.max(1, video.videoHeight|| 240);
-  const cx = Math.round((1 - fx) * (vw - 1));  // 좌우 반전 보정
-  const cy = Math.round(     fy  * (vh - 1));
-  const rw = Math.round(vw * fracW);
-  const rh = Math.round(vh * fracH);
-  const x0 = Math.max(0, Math.min(vw - rw, cx - Math.floor(rw/2)));
-  const y0 = Math.max(0, Math.min(vh - rh, cy - Math.floor(rh/2)));
-  return { x:x0, y:y0, w:rw, h:rh, vw, vh };
-}
-
-/* ROI 전처리 (그레이 → 간단 임계화) */
-function preprocessToOcrCanvas(video, rect){
-  ocrCtx.drawImage(video, rect.x, rect.y, rect.w, rect.h, 0, 0, OCR_W, OCR_H);
-  const img = ocrCtx.getImageData(0,0, OCR_W, OCR_H);
+  const vh = Math.max(1, video.videoHeight || 240);
+  ocrCtx.drawImage(video, 0, 0, vw, vh, 0, 0, OCR_W, OCR_H);
+  const img = ocrCtx.getImageData(0,0,OCR_W,OCR_H);
   const d = img.data;
   let sum=0;
-  // 1) 그레이
-  for(let i=0; i<d.length; i+=4){
+
+  // 1) 회색조 + 평균 밝기
+  for(let i=0;i<d.length;i+=4){
     const g = toGray(d[i], d[i+1], d[i+2]);
     d[i]=d[i+1]=d[i+2]=g;
     sum+=g;
   }
   const mean = sum / (OCR_W*OCR_H);
-  // 2) 간이 임계 (밝은 바탕/어두운 글자 가정)
+
+  // 2) mean 기반 이진화 + 검은 픽셀 비율
   const th = Math.max(60, Math.min(220, mean - 12));
-  for(let i=0; i<d.length; i+=4){
-    const v = d[i] < th ? 0 : 255;
+  let dark = 0;
+  for(let i=0;i<d.length;i+=4){
+    const g = d[i];
+    const v = g < th ? 0 : 255;
+    if(v===0) dark++;
     d[i]=d[i+1]=d[i+2]=v;
     d[i+3]=255;
   }
-  ocrCtx.putImageData(img, 0, 0);
-  return { mean };
+  ocrCtx.putImageData(img,0,0);
+  const darkRatio = dark / (OCR_W*OCR_H);
+  return { mean, darkRatio };
 }
 
-/* OCR: 가장 잘 인식된 숫자를 항상 반환하고, 신뢰도는 이후 단계에서 판단 */
-async function runOcrOnVideo(video, fullFrame=false){
+/* OCR: 프레임 전체에서 숫자 + 기본 신뢰도 반환
+   (잉크 비율/밝기 조건이 안 맞으면 null) */
+async function runOcrOnVideo(video){
   if(!ocrReady || ocrBusy) return null;
   const now = performance.now();
   if(now - ocrLastTs < OCR_INTERVAL_MS) return null;
   ocrLastTs = now;
-  const rect = fullFrame ? {x:0,y:0,w: Math.max(1, video.videoWidth||320), h: Math.max(1, video.videoHeight||240)}
-                         : getRoiRectFromFocus(video);
-  const { mean } = preprocessToOcrCanvas(video, rect);
-  if(!fullFrame && mean < BG_MIN_MEAN){
-    return null;
-  }
+
+  const pp = preprocessToOcrCanvas(video);
+  if(pp.mean < BG_MEAN_MIN) return null;
+  if(pp.darkRatio < DARK_MIN || pp.darkRatio > DARK_MAX) return null;
+
   try{
     ocrBusy = true;
     const res = await ocrWorker.recognize(ocrCvs);
     let bestDigit = null, bestConf = -1;
-    // 1) symbol 수준에서 가장 자신있는 숫자 고름
-    if(res && res.data && res.data.symbols && res.data.symbols.length){
-      for(const s of res.data.symbols){
+    if(res && res.data){
+      const syms = Array.isArray(res.data.symbols) ? res.data.symbols : [];
+      for(const s of syms){
         const ch = (s.text||'').trim();
         if(/^[0-9]$/.test(ch)){
-          if(s.confidence > bestConf){ bestConf = s.confidence; bestDigit = ch; }
+          const c = typeof s.confidence === 'number' ? s.confidence :
+                    typeof s.conf === 'number' ? s.conf : 0;
+          if(c > bestConf){ bestConf = c; bestDigit = ch; }
+        }
+      }
+      if(!bestDigit && typeof res.data.text === 'string'){
+        const m = res.data.text.match(/[0-9]/);
+        if(m){
+          bestDigit = m[0];
+          bestConf = typeof res.data.confidence === 'number'
+            ? res.data.confidence : 0;
         }
       }
     }
-    // 2) symbol이 비어 있으면 text에서 추출
-    if(!bestDigit && res && res.data && typeof res.data.text === 'string'){
-      const m = res.data.text.match(/[0-9]/);
-      if(m){ bestDigit = m[0]; bestConf = (res.data.confidence||0); }
-    }
     ocrBusy = false;
-    if(bestDigit != null){
-      return { digit: bestDigit, conf: bestConf|0 };
-    }
+    if(bestDigit==null || bestConf < OCR_BASE_MIN_CONF) return null;
+    return { digit:String(bestDigit), conf:bestConf };
   }catch(e){
     ocrBusy = false;
+    return null;
   }
-  return null;
 }
 
-/* 패널 감지 루프 */
+/* ===== 패널 감지 루프 (프레임 전체) ===== */
+let panelActiveDigit = null,
+    panelCandDigit   = null,
+    panelCandConf    = 0,
+    panelCandSince   = 0,
+    panelLastLogTs   = 0,
+    panelLastLogDigit= null;
+
 function startDetectLoop(){
+  if(camRAF) cancelAnimationFrame(camRAF);
   const step = async ()=>{
-    // 전체화면 실행 중에는 패널의 OCR 트리거만 쉬어 중복 방지(모션은 유지하여 박스 이동)
-    const runOcr = !isFullscreenRun;
+    if(!camOn || camVideo.readyState < 2){
+      camRAF = requestAnimationFrame(step);
+      return;
+    }
+    const out = await runOcrOnVideo(camVideo);
+    const now = performance.now();
+    let d = null, c = null;
+    if(out && out.digit!=null){
+      d = String(out.digit);
+      c = out.conf;
+    }
 
-    if(!camOn || camVideo.readyState < 2){ camRAF = requestAnimationFrame(step); return; }
-
-    // 1) 저해상도 프레임 → 모션 기반 초점 이동
-    procCtx.drawImage(camVideo, 0, 0, LOW_W, LOW_H);
-    const frame = procCtx.getImageData(0,0,LOW_W,LOW_H);
-    const data = frame.data;
-
-    if (!step.prevGray) step.prevGray = new Uint8ClampedArray(LOW_W*LOW_H);
-    let mass=0, sx=0, sy=0;
-
-    for(let y=0, i=0, p=0; y<LOW_H; y++){
-      for(let x=0; x<LOW_W; x++, i++){
-        const r = data[p++], g = data[p++], b = data[p++]; p++;
-        const gray = toGray(r,g,b);
-        const d = Math.abs(gray - step.prevGray[i]);
-        step.prevGray[i] = gray;
-        if (d>0){ sx += x * d; sy += y * d; mass += d; }
+    // 50% 이상 인식된 숫자는 로그에 표시
+    if(d!=null && typeof c==='number' && c >= DETECT_LOG_MIN_CONF){
+      if(now - panelLastLogTs >= 300 || d !== panelLastLogDigit){
+        panelLastLogTs = now;
+        panelLastLogDigit = d;
+        log(`number : ${d} ${c.toFixed(1)}%`);
       }
     }
 
-    // 초점 업데이트 (focusBox는 화면에 안 보이지만, 내부 계산은 유지)
-    if (mass > MASS_MIN){
-      const cx = sx / mass, cy = sy / mass;
-      fxT = 1 - (cx / (LOW_W-1));  // 좌우 반전
-      fyT =      (cy / (LOW_H-1));
-      focusBox.style.opacity = '1';
-    }else{
-      focusBox.style.opacity = '.15';
+    // 안정화 버퍼
+    if(panelCandDigit !== d){
+      panelCandDigit = d;
+      panelCandConf  = c || 0;
+      panelCandSince = now;
     }
-    fx += (fxT-fx)*FOCUS_LERP; fy += (fyT-fy)*FOCUS_LERP;
-    focusBox.style.left = (fx*100).toFixed(1)+'%';
-    focusBox.style.top  = (fy*100).toFixed(1)+'%';
 
-    // 2) 전체 화면 OCR (주기적으로)
-    if(runOcr){
-      const out = await runOcrOnVideo(camVideo, true);
-      const now = performance.now();
-      let frameDigit = null;
-      let frameConf = null;
-      if(out && out.digit!=null){
-        frameDigit = String(out.digit);
-        frameConf = out.conf;
-      }
-
-      // 50% 이상 인식된 숫자는 모두 로그에 표시
-      if (frameDigit != null && frameConf != null && frameConf >= DIGIT_LOG_MIN_CONF){
-        if (now - lastDigitLogTs >= 300){
-          lastDigitLogTs = now;
-          log(`number : ${frameDigit} ${frameConf.toFixed(1)}%`);
-        }
-      }
-
-      // 안정화(같은 숫자가 일정 시간 유지) 후에 한 번만 이벤트 판단
-      if (candDigit !== frameDigit){ candDigit = frameDigit; candConf = frameConf; candSince = now; }
-      if ((now - candSince) >= OCR_HOLD_MS && activeDigit !== frameDigit){
-        activeDigit = frameDigit;
-        updateDigitReadout(activeDigit);
-
-        if (activeDigit != null && candConf != null){
-          if (candConf >= DIGIT_EVENT_MIN_CONF){
-            log(`🎯 숫자 감지(패널): ${activeDigit} (${candConf.toFixed(1)}%, 이벤트 실행 시도)`);
-            triggerEvent('D'+activeDigit);
-          }else{
-            log(`◽ 숫자 ${activeDigit} 인식(${candConf.toFixed(1)}%) - 기준 ${DIGIT_EVENT_MIN_CONF}% 미만이라 이벤트 실행 안 함`);
-          }
-        }else{
-          log('◽ 숫자 없음');
-        }
-      }
+    if(d!=null && c!=null &&
+       c >= DETECT_EVENT_MIN_CONF &&
+       (now - panelCandSince) >= OCR_HOLD_MS &&
+       panelActiveDigit !== d){
+      panelActiveDigit = d;
+      updateDigitReadout(panelActiveDigit);
+      triggerEvent('D'+panelActiveDigit, panelCandConf);
+    }else if(d==null && panelActiveDigit!=null &&
+             (now - panelCandSince) >= OCR_HOLD_MS){
+      panelActiveDigit = null;
+      updateDigitReadout(null);
     }
 
     camRAF = requestAnimationFrame(step);
@@ -1309,146 +1472,101 @@ function startDetectLoop(){
   camRAF = requestAnimationFrame(step);
 }
 
-/* ================= 전체화면 눈동자: 전체 프레임 OCR ================= */
-const overlayEl = document.getElementById('playOverlay');
+/* ================= 전체화면 눈동자(카메라) 인식 ================= */
 const overlayDigitBadge = document.getElementById('overlayDigitBadge');
-const overlayDigitVal = overlayDigitBadge.querySelector('.value');
+const overlayDigitVal   = overlayDigitBadge.querySelector('.value');
 const eyesCam = document.getElementById('eyesCam');
 
-const ovEyes = [...document.querySelectorAll('#playOverlay .eye')];
-const ovPupils = [...document.querySelectorAll('#playOverlay .pupil')];
+let eyesRAF         = null;
+let ovActiveDigit   = null;
+let ovCandDigit     = null;
+let ovCandConf      = 0;
+let ovCandSince     = 0;
+let ovLastLogTs     = 0;
+let ovLastLogDigit  = null;
 
-let eyesRAF = null;
-let ovPrevGray = null;
-
-/* 눈꺼풀 깜빡임 */
-let overlayBlinkTimer = null;
-function scheduleOverlayBlink(){
-  clearTimeout(overlayBlinkTimer);
-  const t = 2200 + Math.random()*3300;
-  overlayBlinkTimer = setTimeout(()=>{
-    ovEyes.forEach(e=>{
-      e.classList.add('blink');
-      setTimeout(()=> e.classList.remove('blink'),
-        parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--blinkSpeed')) + 40);
-    });
-    scheduleOverlayBlink();
-  }, t);
-}
-
-/* 동공 렌더 */
-function renderPupils(nx, ny){
-  ovEyes.forEach((eye, i) => {
-    const rect = eye.getBoundingClientRect();
-    const rEye = Math.min(rect.width, rect.height)/2;
-    const limit = rEye * 0.32;
-    let dx = nx * limit, dy = ny * limit;
-    const dist = Math.hypot(dx,dy);
-    if (dist>limit){ const r = limit/dist; dx*=r; dy*=r; }
-    ovPupils[i].style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
-  });
-}
-
-/* 터치/드래그로 시선 이동 */
-let overlayPointerActive = false, overlayPointerIdleTimer = null;
-function setOverlayTarget(nx,ny){ ovTarget.x = Math.max(-1, Math.min(1,nx)); ovTarget.y = Math.max(-1, Math.min(1,ny)); }
-function handleOverlayPointer(e){
-  const pt = ('touches' in e && e.touches[0]) ? e.touches[0] : e;
-  const cx = innerWidth/2, cy = innerHeight/2;
-  const dx = pt.clientX - cx, dy = pt.clientY - cy;
-  const d = Math.hypot(innerWidth, innerHeight) || 1;
-  setOverlayTarget(dx/(d*0.25), dy/(d*0.25));
-  overlayPointerActive = true;
-  clearTimeout(overlayPointerIdleTimer);
-  overlayPointerIdleTimer = setTimeout(()=> { overlayPointerActive = false; }, 900);
-}
-
-/* 더블 탭/클릭 종료 */
-let lastTap=0;
-function onOverlayPointerDown(e){
-  const now = e.timeStamp || Date.now();
-  if (now - lastTap <= 300){ stopRun(); lastTap = 0; }
-  else lastTap = now;
-}
-function onOverlayDblClick(){ stopRun(); }
-
-/* 숫자 배지 갱신(오버레이) */
 function overlayShowDigit(d){
-  if (d==null){ overlayDigitBadge.style.display='none'; return; }
-  overlayDigitVal.textContent = String(d);
-  overlayDigitBadge.style.display='inline-flex';
+  if(!overlayDigitBadge) return;
+  if(d==null){
+    overlayDigitBadge.style.display='none';
+  }else{
+    overlayDigitBadge.style.display='inline-flex';
+    overlayDigitVal.textContent = String(d);
+  }
 }
 
-/* 오버레이 타겟/현재(시선) */
-let ovCurrent = {x:0, y:0}, ovTarget = {x:0, y:0};
-// 오버레이에서의 숫자 안정화 상태
-let ovActiveDigit = null, ovCandDigit = null, ovCandSince = 0, ovCandConf = null;
-
-/* === 수정: async function 으로 변경 (await eyesCam.play() 오류 방지) === */
 async function startOverlayEyes(){
-  if(eyesRAF){ cancelAnimationFrame(eyesRAF); eyesRAF = null; }
+  if(eyesRAF) cancelAnimationFrame(eyesRAF);
   overlayShowDigit(null);
 
-  const eyesCam = document.getElementById('eyesCam');
-  if (camStream){ try{ eyesCam.srcObject = camStream; await eyesCam.play(); }catch(_){} }
+  try{
+    if(camStream){
+      eyesCam.srcObject = camStream;
+      const p = eyesCam.play();
+      if(p && typeof p.then==='function') await p;
+    }
+  }catch(e){}
 
-  let fsActive = null, fsCand = null, fsConf = null, fsSince = 0;
+  const loop = async ()=>{
+    if(!isRunning || !isFullscreenRun){
+      eyesRAF = requestAnimationFrame(loop);
+      return;
+    }
+    if(!eyesCam || eyesCam.readyState < 2){
+      eyesRAF = requestAnimationFrame(loop);
+      return;
+    }
 
-  async function loop(){
-    if(!isRunning || !isFullscreenRun){ eyesRAF = requestAnimationFrame(loop); return; }
-    if(!eyesCam || eyesCam.readyState < 2){ eyesRAF = requestAnimationFrame(loop); return; }
-
-    const out = await runOcrOnVideo(eyesCam, true); // 전체 프레임 OCR
+    const out = await runOcrOnVideo(eyesCam);
     const now = performance.now();
-    let frameDigit = null, frameConf = null;
-    if(out && out.digit!=null){ frameDigit = String(out.digit); frameConf = out.conf; }
+    let d = null, c = null;
+    if(out && out.digit!=null){
+      d = String(out.digit);
+      c = out.conf;
+    }
 
     // 50% 이상 인식된 숫자 로그
-    if(frameDigit != null && frameConf != null && frameConf >= DIGIT_LOG_MIN_CONF){
-      if(now - lastDigitLogTs >= 300){
-        lastDigitLogTs = now;
-        log(`number : ${frameDigit} ${frameConf.toFixed(1)}% (overlay)`);
+    if(d!=null && typeof c==='number' && c >= DETECT_LOG_MIN_CONF){
+      if(now - ovLastLogTs >= 300 || d !== ovLastLogDigit){
+        ovLastLogTs = now;
+        ovLastLogDigit = d;
+        log(`number : ${d} ${c.toFixed(1)}% (overlay)`);
       }
     }
 
-    if (fsCand !== frameDigit){
-      fsCand = frameDigit; fsConf = frameConf; fsSince = now;
+    if(ovCandDigit !== d){
+      ovCandDigit = d;
+      ovCandConf  = c || 0;
+      ovCandSince = now;
     }
 
-    if ((now - fsSince) >= OCR_HOLD_MS && fsActive !== frameDigit){
-      fsActive = frameDigit;
-      if (fsActive != null){
-        overlayDigitVal.textContent = String(fsActive);
-        overlayDigitBadge.style.display='inline-flex';
-        if(fsConf != null && fsConf >= DIGIT_EVENT_MIN_CONF){
-          log(`🎯 숫자 감지(전체): ${fsActive} (${fsConf.toFixed(1)}%, 이벤트 실행 시도)`);
-          triggerEvent('D'+fsActive);
-        }else{
-          log(`◽ 숫자 ${fsActive} 인식(${(fsConf||0).toFixed(1)}%) - 기준 ${DIGIT_EVENT_MIN_CONF}% 미만이라 이벤트 실행 안 함`);
-        }
-      }else{
-        overlayDigitBadge.style.display='none';
-        log('◽ 숫자 없음');
-      }
+    if(d!=null && c!=null &&
+       c >= DETECT_EVENT_MIN_CONF &&
+       (now - ovCandSince) >= OCR_HOLD_MS &&
+       ovActiveDigit !== d){
+      ovActiveDigit = d;
+      overlayShowDigit(ovActiveDigit);
+      triggerEvent('D'+ovActiveDigit, ovCandConf);
+    }else if(d==null && ovActiveDigit!=null &&
+             (now - ovCandSince) >= OCR_HOLD_MS){
+      ovActiveDigit = null;
+      overlayShowDigit(null);
     }
+
     eyesRAF = requestAnimationFrame(loop);
-  }
+  };
   eyesRAF = requestAnimationFrame(loop);
 }
-
 function stopOverlayEyes(){
-  if(eyesRAF){ cancelAnimationFrame(eyesRAF); eyesRAF=null; }
-  ovPrevGray=null; overlayShowDigit(null);
-  clearTimeout(overlayBlinkTimer);
-  overlayEl.removeEventListener('pointermove', handleOverlayPointer);
-  overlayEl.removeEventListener('pointerdown', handleOverlayPointer);
-  overlayEl.removeEventListener('pointerdown', onOverlayPointerDown);
-  overlayEl.removeEventListener('dblclick', onOverlayDblClick);
+  if(eyesRAF) cancelAnimationFrame(eyesRAF);
+  eyesRAF = null;
+  overlayShowDigit(null);
 }
 
 /* ================= 끝 ================= */
 </script>
 
+<!-- 좌우 슬라이더 / 파일 메뉴 -->
 <script id="xrobo-hsplit-script">
 (function(){
   var res = document.getElementById('hResizer');
@@ -1467,7 +1585,6 @@ function stopOverlayEyes(){
   function computeMax(){
     var rect = main.getBoundingClientRect();
     var barW = res.getBoundingClientRect().width || 8;
-    // Allow full-span: left can shrink to 0 (no minimum), so max right width is container minus bar
     maxW = Math.max(0, rect.width - barW);
     return maxW;
   }
@@ -1481,19 +1598,21 @@ function stopOverlayEyes(){
   }
 
   function applyWidth(newW){
-    // Allow collapse to 0 and expand up to container edge (minus bar)
     newW = clamp(newW, 0, maxW);
     document.documentElement.style.setProperty('--rightW', newW + 'px');
     cancelAnimationFrame(rafId);
     rafId = requestAnimationFrame(function(){
-      try{ if (window.Blockly && typeof Blockly.svgResize==='function' && window.ws) { Blockly.svgResize(ws); } }catch(e){}
+      try{
+        if (window.Blockly && typeof Blockly.svgResize==='function' && window.ws){
+          Blockly.svgResize(ws);
+        }
+      }catch(e){}
     });
   }
 
   function onMove(clientX){
     if(!dragging) return;
     var dx = clientX - startX;
-    // Dragging to the RIGHT enlarges LEFT (shrinks right), and vice versa.
     var newW = startW - dx;
     applyWidth(newW);
   }
@@ -1503,12 +1622,13 @@ function stopOverlayEyes(){
     document.body.classList.remove('hs-resizing');
   }
 
-  // Mouse
-  res.addEventListener('mousedown', function(e){ e.preventDefault(); onDown(e.clientX); });
+  res.addEventListener('mousedown', function(e){
+    e.preventDefault();
+    onDown(e.clientX);
+  });
   window.addEventListener('mousemove', function(e){ onMove(e.clientX); });
   window.addEventListener('mouseup', onUp);
 
-  // Touch
   res.addEventListener('touchstart', function(e){
     if(!e.touches || !e.touches[0]) return;
     e.preventDefault();
@@ -1520,10 +1640,8 @@ function stopOverlayEyes(){
   }, {passive:false});
   window.addEventListener('touchend', onUp);
 
-  // Ensure panel visible by default (we're using a slider, not the old toggle)
   document.body.classList.remove('panel-collapsed');
 
-  // Keep within bounds when window resizes
   window.addEventListener('resize', function(){
     var cur = right.getBoundingClientRect().width;
     var mx = computeMax();
@@ -1531,7 +1649,7 @@ function stopOverlayEyes(){
   });
 })();
 
-/* === 파일 드롭다운 로직(저장/불러오기) === */
+/* 파일 메뉴 (저장/불러오기) */
 (function(){
   var btn  = document.getElementById('fileBtn');
   var menu = document.getElementById('fileMenu');
@@ -1560,7 +1678,7 @@ function stopOverlayEyes(){
 })();
 </script>
 
-<!-- === 새로만들기 전용 안전 바인딩(다른 코드 변경 없이 추가) === -->
+<!-- 새로만들기 -->
 <script>
 (function(){
   var menu = document.getElementById('fileMenu');
@@ -1571,27 +1689,30 @@ function stopOverlayEyes(){
     try{
       var cmd = e && e.target && e.target.getAttribute && e.target.getAttribute('data-cmd');
       if(cmd !== 'new') return;
-      // 우선 워크스페이스가 있으면 정말 '새로 만들기'
       if (typeof ws !== 'undefined' && ws && typeof ws.clear === 'function'){
         if(confirm('현재 프로젝트를 모두 지우고 새로 만들까요?')){
           try{ ws.clear(); }catch(_){}
-          try{ if(typeof multiServoConfigs !== 'undefined' && multiServoConfigs && typeof multiServoConfigs.clear==='function') multiServoConfigs.clear(); }catch(_){}
+          try{
+            if(typeof multiServoConfigs !== 'undefined' &&
+               multiServoConfigs && typeof multiServoConfigs.clear==='function')
+              multiServoConfigs.clear();
+          }catch(_){}
           try{ if(typeof refreshCodeDebounced === 'function') refreshCodeDebounced(); }catch(_){}
           try{ if(typeof log === 'function') log('🆕 새 프로젝트'); }catch(_){}
         }
       }else{
-        // 워크스페이스가 없으면 페이지 새로고침으로 폴백
         if(confirm('페이지를 새로고침하여 새로 시작할까요?')){
           location.reload();
         }
       }
-    }catch(_){ /* no-op */ }
+    }catch(_){}
   });
 })();
 </script>
+
+<!-- 안드로이드 숫자 키패드 (원래 코드 그대로) -->
 <script id="xrobo-kp4x4-v14-script">
 (function(){
-  // Only enable keypad on Android; on desktop Chrome, keypad is disabled.
   if(!/Android/i.test(navigator.userAgent||'')) { return; }
 
   'use strict';
@@ -1600,21 +1721,19 @@ function stopOverlayEyes(){
   const hasPointer = 'PointerEvent' in window;
 
   let pad, disp, grid;
-  let activeInput = null;     // html input (if captured)
-  let activeField = null;     // Blockly field instance (FieldNumber)
-  let promptCallback = null;  // prompt override
+  let activeInput = null;
+  let activeField = null;
+  let promptCallback = null;
   let buffer = '';
   let rafId = 0;
   let lastAnchor = {x: window.innerWidth/2, y: 140};
   let outsideBound = false;
   let committing = false;
 
-  // press dedup (for some Androids firing twice)
   let lastPressLabel = '';
   let lastPressTime = 0;
   const PRESS_DEBOUNCE_MS = 160;
 
-  /* ===== utils ===== */
   function safeEval(expr){
     if(typeof expr!=='string') return NaN;
     expr = expr.replace(/[^0-9+\-*/\s]/g,'').trim();
@@ -1623,36 +1742,45 @@ function stopOverlayEyes(){
     if(tokens.length===0) return NaN;
     const values=[], ops=[]; let expectNum=true, unary=null;
     function prec(op){ return (op==='*'||op==='/')?2:1; }
-    function apply(){ const op=ops.pop(), b=values.pop(), a=values.pop();
-      values.push(op==='+'?a+b: op==='-'?a-b: op==='*'?a*b: (b===0?0:Math.trunc(a/b))); }
+    function apply(){
+      const op=ops.pop(), b=values.pop(), a=values.pop();
+      values.push(op==='+'?a+b: op==='-'?a-b: op==='*'?a*b: (b===0?0:Math.trunc(a/b)));
+    }
     for(const tk of tokens){
       if(/^\d+$/.test(tk)){
-        let v=parseInt(tk,10); if(unary==='-') v=-v; unary=null; values.push(v); expectNum=false;
+        let v=parseInt(tk,10);
+        if(unary==='-') v=-v;
+        unary=null; values.push(v); expectNum=false;
       }else{
-        if(expectNum){ if(tk==='+'||tk==='-') unary=tk; }
-        else{ while(ops.length && prec(ops[ops.length-1])>=prec(tk)) apply(); ops.push(tk); expectNum=true; }
+        if(expectNum){
+          if(tk==='+'||tk==='-') unary=tk;
+        }else{
+          while(ops.length && prec(ops[ops.length-1])>=prec(tk)) apply();
+          ops.push(tk); expectNum=true;
+        }
       }
     }
     while(ops.length) apply();
     return values.length? values[0]:NaN;
   }
-  function dispatch(el, type){ try{ el.dispatchEvent(new Event(type, {bubbles:true})); }catch(_){ } }
+  function dispatch(el, type){
+    try{ el.dispatchEvent(new Event(type, {bubbles:true})); }catch(_){}
+  }
 
-  /* ===== keypad UI ===== */
   function buildPad(){
     if(pad) return pad;
     pad = document.createElement('div');
     pad.id = 'xrobo-kp4x4-v14';
     pad.innerHTML = '<div class="display" aria-live="polite"></div><div class="grid" role="group" aria-label="숫자패드"></div>';
     document.body.appendChild(pad);
-    disp = pad.querySelector('.display'); grid = pad.querySelector('.grid');
+    disp = pad.querySelector('.display');
+    grid = pad.querySelector('.grid');
 
     const layout = [
       {t:'1'},{t:'2'},{t:'3'},{t:'←',cls:'back'},
       {t:'4'},{t:'5'},{t:'6'},{t:'C',cls:'clear'},
       {t:'7'},{t:'8'},{t:'9'},{t:'+',cls:'op'},
       {t:'*',cls:'op'},{t:'0'},{t:'/',cls:'op'},{t:'-',cls:'op'},
-      // order: 확인 -> 취소
       {t:'확인',cls:'wide ok'},{t:'취소',cls:'wide cancel'}
     ];
     layout.forEach(k=>{
@@ -1664,7 +1792,7 @@ function stopOverlayEyes(){
     const press = (label)=>{
       const now = performance.now();
       if(label === lastPressLabel && (now - lastPressTime) < PRESS_DEBOUNCE_MS){
-        return; // ignore duplicate
+        return;
       }
       lastPressLabel = label; lastPressTime = now;
 
@@ -1677,19 +1805,20 @@ function stopOverlayEyes(){
 
     function getButtonFromEvent(e){
       if(e.type==='touchstart' && e.touches && e.touches[0]){
-        const t=e.touches[0]; const el=document.elementFromPoint(t.clientX, t.clientY);
+        const t=e.touches[0];
+        const el=document.elementFromPoint(t.clientX, t.clientY);
         return el && el.closest && el.closest('button');
       }
       return e.target && e.target.closest && e.target.closest('button');
     }
 
     const onPress = (e)=>{
-      const btn = getButtonFromEvent(e); if(!btn) return;
+      const btn = getButtonFromEvent(e);
+      if(!btn) return;
       e.preventDefault(); e.stopPropagation();
       press(btn.textContent);
     };
 
-    // Single path
     if(!grid.dataset.bound){
       if(hasPointer){
         grid.addEventListener('pointerdown', onPress, true);
@@ -1698,12 +1827,12 @@ function stopOverlayEyes(){
       }else{
         grid.addEventListener('mousedown', onPress, true);
       }
-      // prevent native click duplication
-      grid.addEventListener('click', function(e){ e.preventDefault(); e.stopPropagation(); }, true);
+      grid.addEventListener('click', function(e){
+        e.preventDefault(); e.stopPropagation();
+      }, true);
       grid.dataset.bound = '1';
     }
 
-    // outside handler (single-binding)
     const outside = (e)=>{
       if(!pad.classList.contains('show')) return;
       if(pad.contains(e.target)) return;
@@ -1720,7 +1849,6 @@ function stopOverlayEyes(){
       }
       outsideBound = true;
     }
-
     return pad;
   }
 
@@ -1741,7 +1869,8 @@ function stopOverlayEyes(){
   function positionNearPoint(x,y){ positionNearRect({left:x, right:x, top:y, bottom:y, width:0, height:0}); }
   function positionNearField(field){
     try{
-      const root = field && field.getClickTarget_ ? field.getClickTarget_() : (field && field.getSvgRoot && field.getSvgRoot());
+      const root = field && field.getClickTarget_ ? field.getClickTarget_() :
+                   (field && field.getSvgRoot && field.getSvgRoot());
       if(root && root.getBoundingClientRect){
         positionNearRect(root.getBoundingClientRect());
         return true;
@@ -1789,7 +1918,7 @@ function stopOverlayEyes(){
         activeField = null;
       }else if(typeof promptCallback === 'function'){
         const n = safeEval(buffer); const v = Number.isFinite(n) ? String(n) : buffer;
-        try{ promptCallback(v); }catch(_){}
+        try{ callback(v); }catch(_){}
         promptCallback = null;
       }else if(activeInput){
         const { ok, val } = evaluateAndClamp(buffer, activeInput);
@@ -1797,7 +1926,12 @@ function stopOverlayEyes(){
         dispatch(activeInput,'input');
         dispatch(activeInput,'change');
       }
-      try{ if(window.Blockly && Blockly.WidgetDiv && typeof Blockly.WidgetDiv.hide==='function'){ Blockly.WidgetDiv.hide(); } }catch(_){}
+      try{
+        if(window.Blockly && Blockly.WidgetDiv &&
+           typeof Blockly.WidgetDiv.hide==='function'){
+          Blockly.WidgetDiv.hide();
+        }
+      }catch(_){}
       activeInput = null;
       stopFollow(); hidePad();
     }finally{
@@ -1810,7 +1944,6 @@ function stopOverlayEyes(){
     stopFollow(); hidePad();
   }
 
-  /* ===== discover Blockly input robustly ===== */
   function findBlocklyInput(){
     try{
       if(window.Blockly){
@@ -1828,12 +1961,13 @@ function stopOverlayEyes(){
     return null;
   }
 
-  /* ===== openers ===== */
   function setupInputPlatform(input){
     if(isAndroid){
       input.setAttribute('readonly', 'readonly');
       input.setAttribute('inputmode','none');
-      input.addEventListener('touchstart', ev=>{ ev.preventDefault(); ev.stopPropagation(); }, {capture:true, passive:false});
+      input.addEventListener('touchstart', ev=>{
+        ev.preventDefault(); ev.stopPropagation();
+      }, {capture:true, passive:false});
       setTimeout(()=>{ try{ input.blur(); }catch(_){ } }, 0);
     }else{
       input.removeAttribute('readonly');
@@ -1844,7 +1978,7 @@ function stopOverlayEyes(){
         else if(e.key==='Escape'){ e.preventDefault(); cancel(); }
       }, {once:true, capture:true});
     }
-    input.setAttribute('pattern','[0-9+\-*/]*');
+    input.setAttribute('pattern','[0-9+\\-*/]*');
     input.setAttribute('autocomplete','off');
     input.setAttribute('autocorrect','off');
     input.setAttribute('autocapitalize','off');
@@ -1863,7 +1997,7 @@ function stopOverlayEyes(){
 
   function openForField(field){
     activeField = field || null; activeInput = null; promptCallback = null;
-    buffer = (field && typeof field.getValue==='function') ? String(field.getValue||'') : '';
+    buffer = (field && typeof field.getValue==='function') ? String(field.getValue()||'') : '';
     showPad();
     if(!positionNearField(field)){
       positionNearPoint(lastAnchor.x, lastAnchor.y);
@@ -1877,7 +2011,6 @@ function stopOverlayEyes(){
     showPad(); positionNearPoint(anchor.x, anchor.y); sync();
   }
 
-  /* ===== hooks ===== */
   function afterEditorOpened(field){
     let found = false;
     const adopt = ()=>{
@@ -1947,7 +2080,7 @@ function stopOverlayEyes(){
   function patchPrompt(){
     try{
       if(!window.Blockly) return;
-      const numLike = v => /^[\s]*[+\-]?\d+(?:[\s]*[+\-*/][\s]*[+\-]?\d+)*[\s]*$/.test(String(v||''));
+      const numLike = v => /^[\\s]*[+\\-]?\\d+(?:[\\s]*[+\\-*/][\\s]*[+\\-]?\\d+)*[\\s]*$/.test(String(v||''));
       if(Blockly.dialog && typeof Blockly.dialog.setPrompt==='function' && !Blockly.dialog.__xrobo_v14){
         Blockly.dialog.setPrompt(function(msg, defVal, cb){
           const looksNumeric = numLike(defVal) || /value|값|number|숫자/i.test(String(msg||''));
@@ -1979,7 +2112,8 @@ function stopOverlayEyes(){
   document.addEventListener('focusin', function(e){
     const t = e.target;
     if(!t) return;
-    if(t.classList && (t.classList.contains('blocklyHtmlInput') || t.classList.contains('blocklyHtmlTextInput'))){
+    if(t.classList && (t.classList.contains('blocklyHtmlInput') ||
+                       t.classList.contains('blocklyHtmlTextInput'))){
       openForInput(t, null);
       const onBlur = ()=>{ try{ commit(); }catch(_){ cancel(); } t.removeEventListener('blur', onBlur); };
       t.addEventListener('blur', onBlur);
@@ -2004,7 +2138,9 @@ function stopOverlayEyes(){
     if(hasPointer) root.addEventListener('pointerdown', savePt, true);
     else{
       root.addEventListener('mousedown', savePt, true);
-      root.addEventListener('touchstart', (e)=>{ if(e.touches&&e.touches[0]) lastAnchor={x:e.touches[0].clientX, y:e.touches[0].clientY}; }, {capture:true, passive:true});
+      root.addEventListener('touchstart', (e)=>{
+        if(e.touches&&e.touches[0]) lastAnchor={x:e.touches[0].clientX, y:e.touches[0].clientY};
+      }, {capture:true, passive:true});
     }
   })();
 
@@ -2014,7 +2150,8 @@ function stopOverlayEyes(){
   }else{
     window.addEventListener('DOMContentLoaded', tryPatch);
   }
-  let tries=0; const iv=setInterval(()=>{ tryPatch(); if(++tries>12) clearInterval(iv); }, 300);
+  let tries=0;
+  const iv=setInterval(()=>{ tryPatch(); if(++tries>12) clearInterval(iv); }, 300);
 
 })();
 </script>
