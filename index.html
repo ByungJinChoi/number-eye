@@ -285,6 +285,21 @@
   }
   .dropdown .menu > button:hover{ background:#f3f4f6; }
   #fileBtn{ background:#6b7280; color:#ffffff; }
+
+/* === Fullscreen camera on overlay (replace eyes) === */
+#playOverlay.fullcam #eyesStage{ display: none !important; }
+#playOverlay.fullcam #eyesCam{
+  position: absolute !important;
+  left: 0 !important;
+  top: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  opacity: 1 !important;
+  object-fit: cover !important;
+  transform: scaleX(-1);
+  pointer-events: none !important;
+  z-index: 0 !important;
+}
 </style>
 
 <style id="xrobo-hsplit-style">
@@ -860,6 +875,7 @@ async function startFullRun(){
 
   // 오버레이 표시 + 전체화면 시도
   overlay.classList.add('show');
+  overlay.classList.add('fullcam');
   overlay.setAttribute('aria-hidden','false');
   try{ if(overlay.requestFullscreen) await overlay.requestFullscreen(); }catch(e){}
 
@@ -879,7 +895,8 @@ async function startFullRun(){
 async function stopRun(){
   cancelToken++; queue=[];
   setRunning(false);
-  stopOverlayEyes();                     // 눈동자 루프 정지 및 리스너 해제
+    overlay.classList.remove('fullcam');
+stopOverlayEyes();                     // 눈동자 루프 정지 및 리스너 해제
   overlay.classList.remove('show');      // 오버레이 숨김
   overlay.setAttribute('aria-hidden','true');
   isFullscreenRun = false;
@@ -919,7 +936,7 @@ const FOCUS_LERP = 0.20;              // 초점 스무딩
 
 // OCR 파라미터
 const OCR_W = 240, OCR_H = 240;
-const OCR_INTERVAL_MS = 600;  // 주기(로그는 1초)
+const OCR_INTERVAL_MS = 420;
 const OCR_HOLD_MS = 240;
 const OCR_MIN_CONF = 48;
 const BG_MIN_MEAN = 90;
@@ -1138,7 +1155,15 @@ function startDetectLoop(){
     focusBox.style.left = (fx*100).toFixed(1)+'%';
     focusBox.style.top  = (fy*100).toFixed(1)+'%';
 
-    // 2) ROI OCR (주기적으로)
+    
+    /* 🔒 ROI focus lock: keep box centered and fixed */
+    try{
+      fx = fxT = 0.5; fy = fyT = 0.5;
+      focusBox.style.left = '50%';
+      focusBox.style.top  = '50%';
+      focusBox.style.opacity = '1';
+    }catch(_){}
+// 2) ROI OCR (주기적으로)
     if(runOcr){
       const out = await runOcrOnVideo(camVideo);
       const now = performance.now();
