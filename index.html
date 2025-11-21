@@ -1288,7 +1288,7 @@ let ovCurrent = {x:0, y:0}, ovTarget = {x:0, y:0};
 let ovActiveDigit = null, ovCandDigit = null, ovCandSince = 0;
 
 /* 오버레이 감지 루프 */
-async async function startOverlayEyes(){
+async function startOverlayEyes(){
   // PATCH: fullscreen OCR on full frame with log + badge (no cartoon eyes used)
   if(eyesRAF){ cancelAnimationFrame(eyesRAF); eyesRAF = null; }
   overlayShowDigit(null);
