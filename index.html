@@ -252,7 +252,7 @@
     font-size: calc(12px * var(--uiScale)); color:#d1e4ff;
   }
 
-  /* 실행창 토글 핸들 (현재는 CSS로 숨김 처리됨) */
+  /* 실행창 토글 핸들 (현재는 CSS로 숨김 처리) */
   #panelHandle{
     position:absolute; top: calc(12px * var(--uiScale)); right: 0;
     z-index:999; width: var(--handleW); height: var(--handleH);
@@ -519,7 +519,7 @@
     </category>
   </xml>
 
-  <!-- 전체화면 오버레이: 눈동자 + 카메라 + 로그 -->
+  <!-- 전체화면 오버레이: 숫자 인식 + 로그 -->
   <div id="playOverlay" aria-hidden="true">
     <div class="body">
       <!-- 처리용 전면 카메라 -->
@@ -673,6 +673,15 @@ function buildEventPrograms(){
     var norm = normalizeProgram(prog);
     programs[code] = programs[code].concat(norm);
   }
+
+  // 어떤 숫자에 몇 개 명령이 연결됐는지 로그로 보여주기
+  log('🧩 이벤트 테이블 갱신');
+  Object.keys(programs).forEach(function(k){
+    if(programs[k].length){
+      log('   - 숫자 '+k.substring(1)+' : '+programs[k].length+'개 명령');
+    }
+  });
+
   return programs;
 }
 
@@ -693,6 +702,7 @@ ws.addChangeListener(function(ev){
   if(ev && ev.type===Blockly.Events.UI && ev.element==='zoom'){ applyUiScaleFromWorkspace(); }
 });
 setInterval(function(){ applyUiScaleFromWorkspace(); }, 200);
+applyUiScaleFromWorkspace();
 applyHeaderHeight();
 
 /* ================= BLE & 로그 ================= */
@@ -701,7 +711,7 @@ var bleDevice=null,bleServer=null,bleService=null,writeChar=null,notifyChar=null
 var isConnected=false, isRunning=false, isFullscreenRun=false;
 var $=id=>document.getElementById(id);
 
-/* === 수정: 오버레이 로그(ovLog)까지 같이 찍히도록 log() 확장 === */
+/* === 수정: 메인 로그 + 오버레이 로그 동시에 찍기 === */
 var log=function(m){
   var L=$('log');
   if(L){
@@ -909,16 +919,6 @@ function sendRaw(s){
   if(!writeChar){ log('➡️(BLE 미연결) '+s); return Promise.resolve(); }
   return writeChar.writeValue(enc(s+'\n')).then(()=>{ log('➡️ '+s); }).catch(e=>{ log('⚠️ 전송 실패: '+e); });
 }
-async function processQueue(localToken){
-  if(queueBusy) return;
-  queueBusy = true;
-  try{
-    while(queue.length && localToken === cancelToken){
-      var item = queue.shift();
-      await runList(item.list, localToken);
-    }
-  }finally{ queueBusy = false; }
-}
 async function runList(list, localToken){
   for(var i=0;i<list.length;i++){
     var ins=list[i];
@@ -930,13 +930,39 @@ async function runList(list, localToken){
     }
   }
 }
-function triggerEvent(name){
-  if(!isRunning) return;
+async function processQueue(localToken){
+  if(queueBusy) return;
+  queueBusy = true;
+  try{
+    while(queue.length && localToken === cancelToken){
+      var item = queue.shift();
+      await runList(item.list, localToken);
+    }
+  }finally{ queueBusy = false; }
+}
+
+/* 이벤트 테이블에서 시퀀스 가져오기 (필요시 재빌드) */
+function getEventSeq(name){
   var seq = eventPrograms[name];
+  if(!seq || !seq.length){
+    eventPrograms = buildEventPrograms();
+    seq = eventPrograms[name];
+  }
+  return seq;
+}
+function triggerEvent(name){
+  if(!isRunning){
+    log('⏸ 실행 중이 아니라 이벤트를 실행하지 않습니다. ('+name+')');
+    return;
+  }
+  var seq = getEventSeq(name);
   if(seq && seq.length){
-    queue.push({list: seq});
+    log('▶ 이벤트 '+name.replace(/^D/,'숫자 ')+' 실행 ('+seq.length+'개 명령)');
+    queue.push({list: seq.slice()});
     var myToken = cancelToken;
     processQueue(myToken);
+  }else{
+    log('⚠️ 이벤트 '+name.replace(/^D/,'숫자 ')+' 에 연결된 블록이 없습니다.');
   }
 }
 
@@ -1020,7 +1046,10 @@ const FOCUS_LERP = 0.20;              // 초점 스무딩
 const OCR_W = 240, OCR_H = 240;
 const OCR_INTERVAL_MS = 420;
 const OCR_HOLD_MS = 240;
-const OCR_MIN_CONF = 48;
+/* 신뢰도 기준 */
+const OCR_MIN_CONF = 0;               // OCR 결과는 항상 반환
+const DIGIT_EVENT_MIN_CONF = 50;      // 이 값 이상일 때만 이벤트 실행
+const DIGIT_LOG_MIN_CONF   = 50;      // 이 값 이상일 때만 number 로그 출력
 const BG_MIN_MEAN = 90;               // ROI 평균 밝기 최소(하얀 종이 조건 힌트)
 
 let camStream = null, camOn = false, camRAF = null;
@@ -1038,7 +1067,7 @@ ocrCvs.width = OCR_W; ocrCvs.height = OCR_H;
 function toGray(r,g,b){ return (r*0.299 + g*0.587 + b*0.114)|0; }
 
 /* 상태 (패널) */
-let activeDigit = null, candDigit = null, candSince = 0;
+let activeDigit = null, candDigit = null, candSince = 0, candConf = null;
 let fx=0.5, fy=0.5, fxT=0.5, fyT=0.5;
 let lastDigitLogTs = 0;
 
@@ -1079,7 +1108,8 @@ function stopCam(){
   }
   camStream = null; camOn=false; updateCamUi();
   if(camRAF){ cancelAnimationFrame(camRAF); camRAF=null; }
-  activeDigit=candDigit=null; candSince=0; fx=fy=fxT=fyT=0.5; lastDigitLogTs=0;
+  activeDigit=candDigit=null; candSince=0; candConf=null;
+  fx=fy=fxT=fyT=0.5; lastDigitLogTs=0;
   focusBox.style.left='50%'; focusBox.style.top='50%'; focusBox.style.opacity='.15';
   updateDigitReadout(null);
   log('🛑 카메라 꺼짐');
@@ -1157,12 +1187,14 @@ function preprocessToOcrCanvas(video, rect){
   return { mean };
 }
 
+/* OCR: 가장 잘 인식된 숫자를 항상 반환하고, 신뢰도는 이후 단계에서 판단 */
 async function runOcrOnVideo(video, fullFrame=false){
   if(!ocrReady || ocrBusy) return null;
   const now = performance.now();
   if(now - ocrLastTs < OCR_INTERVAL_MS) return null;
   ocrLastTs = now;
-  const rect = fullFrame ? {x:0,y:0,w: Math.max(1, video.videoWidth||320), h: Math.max(1, video.videoHeight||240)} : getRoiRectFromFocus(video);
+  const rect = fullFrame ? {x:0,y:0,w: Math.max(1, video.videoWidth||320), h: Math.max(1, video.videoHeight||240)}
+                         : getRoiRectFromFocus(video);
   const { mean } = preprocessToOcrCanvas(video, rect);
   if(!fullFrame && mean < BG_MIN_MEAN){
     return null;
@@ -1186,12 +1218,11 @@ async function runOcrOnVideo(video, fullFrame=false){
       if(m){ bestDigit = m[0]; bestConf = (res.data.confidence||0); }
     }
     ocrBusy = false;
-    if(bestDigit != null && bestConf >= OCR_MIN_CONF){
+    if(bestDigit != null){
       return { digit: bestDigit, conf: bestConf|0 };
     }
   }catch(e){
     ocrBusy = false;
-    // 에러는 조용히 무시
   }
   return null;
 }
@@ -1235,7 +1266,7 @@ function startDetectLoop(){
     focusBox.style.left = (fx*100).toFixed(1)+'%';
     focusBox.style.top  = (fy*100).toFixed(1)+'%';
 
-    // 2) 전체 화면 OCR (주기적으로)  ← ★ 수정: ROI가 아닌 fullFrame 사용
+    // 2) 전체 화면 OCR (주기적으로)
     if(runOcr){
       const out = await runOcrOnVideo(camVideo, true);
       const now = performance.now();
@@ -1246,21 +1277,27 @@ function startDetectLoop(){
         frameConf = out.conf;
       }
 
-      // 1초 주기 디버그 로그: 현재 프레임에서 가장 가까운 숫자와 신뢰도 표시
-      if (now - lastDigitLogTs >= 1000){
-        lastDigitLogTs = now;
-        const logDigit = frameDigit != null ? frameDigit : '-';
-        const logConf  = frameConf != null ? frameConf.toFixed(1) : 0;
-        log(`number : ${logDigit} ${logConf}%`);
+      // 50% 이상 인식된 숫자는 모두 로그에 표시
+      if (frameDigit != null && frameConf != null && frameConf >= DIGIT_LOG_MIN_CONF){
+        if (now - lastDigitLogTs >= 300){
+          lastDigitLogTs = now;
+          log(`number : ${frameDigit} ${frameConf.toFixed(1)}%`);
+        }
       }
 
-      if (candDigit !== frameDigit){ candDigit = frameDigit; candSince = now; }
+      // 안정화(같은 숫자가 일정 시간 유지) 후에 한 번만 이벤트 판단
+      if (candDigit !== frameDigit){ candDigit = frameDigit; candConf = frameConf; candSince = now; }
       if ((now - candSince) >= OCR_HOLD_MS && activeDigit !== frameDigit){
         activeDigit = frameDigit;
         updateDigitReadout(activeDigit);
-        if (activeDigit!=null){
-          log('🎯 숫자 감지(ROI): '+activeDigit+' (이벤트 실행)');
-          triggerEvent('D'+activeDigit);
+
+        if (activeDigit != null && candConf != null){
+          if (candConf >= DIGIT_EVENT_MIN_CONF){
+            log(`🎯 숫자 감지(패널): ${activeDigit} (${candConf.toFixed(1)}%, 이벤트 실행 시도)`);
+            triggerEvent('D'+activeDigit);
+          }else{
+            log(`◽ 숫자 ${activeDigit} 인식(${candConf.toFixed(1)}%) - 기준 ${DIGIT_EVENT_MIN_CONF}% 미만이라 이벤트 실행 안 함`);
+          }
         }else{
           log('◽ 숫자 없음');
         }
@@ -1345,11 +1382,10 @@ function overlayShowDigit(d){
 /* 오버레이 타겟/현재(시선) */
 let ovCurrent = {x:0, y:0}, ovTarget = {x:0, y:0};
 // 오버레이에서의 숫자 안정화 상태
-let ovActiveDigit = null, ovCandDigit = null, ovCandSince = 0;
+let ovActiveDigit = null, ovCandDigit = null, ovCandSince = 0, ovCandConf = null;
 
-/* === 수정: async function 으로 변경 (await eyesCam.play() 문법 오류 해결) === */
+/* === 수정: async function 으로 변경 (await eyesCam.play() 오류 방지) === */
 async function startOverlayEyes(){
-  // PATCH: fullscreen OCR on full frame with log + badge (no cartoon eyes used)
   if(eyesRAF){ cancelAnimationFrame(eyesRAF); eyesRAF = null; }
   overlayShowDigit(null);
 
@@ -1361,23 +1397,37 @@ async function startOverlayEyes(){
   async function loop(){
     if(!isRunning || !isFullscreenRun){ eyesRAF = requestAnimationFrame(loop); return; }
     if(!eyesCam || eyesCam.readyState < 2){ eyesRAF = requestAnimationFrame(loop); return; }
-    const out = await runOcrOnVideo(eyesCam, true); // <-- full frame OCR
+
+    const out = await runOcrOnVideo(eyesCam, true); // 전체 프레임 OCR
     const now = performance.now();
     let frameDigit = null, frameConf = null;
     if(out && out.digit!=null){ frameDigit = String(out.digit); frameConf = out.conf; }
+
+    // 50% 이상 인식된 숫자 로그
+    if(frameDigit != null && frameConf != null && frameConf >= DIGIT_LOG_MIN_CONF){
+      if(now - lastDigitLogTs >= 300){
+        lastDigitLogTs = now;
+        log(`number : ${frameDigit} ${frameConf.toFixed(1)}% (overlay)`);
+      }
+    }
+
     if (fsCand !== frameDigit){
       fsCand = frameDigit; fsConf = frameConf; fsSince = now;
-      if (fsCand!=null) updateDigitReadout(fsCand, true, fsConf);
     }
+
     if ((now - fsSince) >= OCR_HOLD_MS && fsActive !== frameDigit){
       fsActive = frameDigit;
-      updateDigitReadout(fsActive, false, fsConf);
-      if (fsActive!=null){
-        try{ overlayDigitVal.textContent = String(fsActive); overlayDigitBadge.style.display='inline-flex'; }catch(_){}
-        log('🎯 숫자 감지(전체): '+fsActive+' (이벤트 실행)');
-        triggerEvent('D'+fsActive);
+      if (fsActive != null){
+        overlayDigitVal.textContent = String(fsActive);
+        overlayDigitBadge.style.display='inline-flex';
+        if(fsConf != null && fsConf >= DIGIT_EVENT_MIN_CONF){
+          log(`🎯 숫자 감지(전체): ${fsActive} (${fsConf.toFixed(1)}%, 이벤트 실행 시도)`);
+          triggerEvent('D'+fsActive);
+        }else{
+          log(`◽ 숫자 ${fsActive} 인식(${(fsConf||0).toFixed(1)}%) - 기준 ${DIGIT_EVENT_MIN_CONF}% 미만이라 이벤트 실행 안 함`);
+        }
       }else{
-        try{ overlayDigitBadge.style.display='none'; }catch(_){}
+        overlayDigitBadge.style.display='none';
         log('◽ 숫자 없음');
       }
     }
