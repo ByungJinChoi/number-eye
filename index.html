@@ -129,7 +129,7 @@
   /* ROI 초점 박스 */
   #focusBox{
     position:absolute; left:50%; top:50%;
-    width:38%; aspect-ratio:1/1;
+    width:45%; aspect-ratio:1/1;
     transform: translate(-50%,-50%);
     border:2px solid rgba(255,255,255,.9);
     border-radius:10px;
@@ -918,11 +918,11 @@ const MASS_MIN = 12000;               // 모션 총량 임계
 const FOCUS_LERP = 0.20;              // 초점 스무딩
 
 // OCR 파라미터
-const OCR_W = 256, OCR_H = 256;
+const OCR_W = 240, OCR_H = 240;
 const OCR_INTERVAL_MS = 500;
 const OCR_HOLD_MS = 240;
 const OCR_MIN_CONF = 48;
-const BG_MIN_MEAN = 90;
+const BG_MIN_MEAN = 0;
               // ROI 평균 밝기 최소(하얀 종이 조건 힌트)
 
 let camStream = null, camOn = false, camRAF = null;
@@ -940,10 +940,9 @@ ocrCvs.width = OCR_W; ocrCvs.height = OCR_H;
 function toGray(r,g,b){ return (r*0.299 + g*0.587 + b*0.114)|0; }
 
 /* 상태 (패널) */
-let activeDigit = null, candDigit = null, candSince = 0, candConf = null;
+let activeDigit = null, candDigit = null, candSince = 0;
 let fx=0.5, fy=0.5, fxT=0.5, fyT=0.5;
 let lastDigitLogTs = 0;
-let lastLoggedDigit = null;
 
 function setCamBadge(t){ camBadge.textContent = 'Cam: ' + t; }
 function updateCamUi(){
@@ -1050,7 +1049,7 @@ function preprocessToOcrCanvas(video, rect){
   }
   const mean = sum / (OCR_W*OCR_H);
   // 2) 간이 임계 (밝은 바탕/어두운 글자 가정)
-  const th = Math.max(50, Math.min(220, mean - 8));
+  const th = Math.max(60, Math.min(220, mean - 12));
   for(let i=0; i<d.length; i+=4){
     const v = d[i] < th ? 0 : 255;
     d[i]=d[i+1]=d[i+2]=v;
@@ -1150,30 +1149,15 @@ function startDetectLoop(){
         frameConf = out.conf;
       }
 
-      ${logConf}%`);
-      }
-
-      if (candDigit !== frameDigit){ candDigit = frameDigit; candConf = frameConf;
-        candSince = now; }
+      
+      if (candDigit !== frameDigit){ candDigit = frameDigit; candSince = now; }
       if ((now - candSince) >= OCR_HOLD_MS && activeDigit !== frameDigit){
         activeDigit = frameDigit;
         updateDigitReadout(activeDigit);
-        
         if (activeDigit!=null){
-          if (lastLoggedDigit !== activeDigit){
-            const confOut = (candConf!=null) ? candConf.toFixed(1) : 0;
-            log(`number : ${activeDigit} ${confOut}%`);
-            lastLoggedDigit = activeDigit;
-          }
+          log('🎯 숫자 감지(ROI): '+activeDigit+' (이벤트 실행)');
           triggerEvent('D'+activeDigit);
         }else{
-          if (lastLoggedDigit !== null){
-            log('number : -');
-            lastLoggedDigit = null;
-          }
-        }
-        
-    }else{
           log('◽ 숫자 없음');
         }
       }
