@@ -2,17 +2,17 @@
 <html lang="ko">
 <head>
 <meta charset="utf-8" />
-<title>XROBO number — Digit OCR Edition (흑백 ROI / 0.5초 파이프라인)</title>
+<title>XROBO BLE — Digit OCR Edition (흑백 ROI / 1초 주기)</title>
 <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no" />
 <script src="https://unpkg.com/blockly/blockly.min.js"></script>
 <!-- Tesseract.js for in-browser OCR (digit-only) -->
 <script src="https://unpkg.com/tesseract.js@5/dist/tesseract.min.js"></script>
 <style>
 
-/* === PATCH: overlay split styles === */
+/* === 전체화면 실행 시: 영상 크게, 로그 조금 작게 === */
 #playOverlay .body{
   display:grid;
-  grid-template-columns: 1fr minmax(260px, 32vw);
+  grid-template-columns: minmax(0, 2.6fr) minmax(260px, 1fr); /* 왼쪽(영상) : 오른쪽(로그) */
   gap:0;
   height:100%;
 }
@@ -68,9 +68,10 @@
   letter-spacing:.5px;
 }
 @media (max-width:880px){
+  /* 작은 화면에서는 위:영상 / 아래:로그 (로그 높이 약 180~220px) */
   #playOverlay .body{
     grid-template-columns: 1fr;
-    grid-template-rows: 1fr 220px;
+    grid-template-rows: minmax(0, 1.7fr) minmax(180px, .9fr);
   }
   #playOverlay .ov-right-panel{
     border-left:none;
@@ -78,7 +79,7 @@
   }
 }
 
-/* === PATCH: eyes stage만 숨기기 (focusBox는 사용) === */
+/* 눈동자 애니메이션은 숨기고, ROI 박스는 사용 */
 #eyesStage{display:none !important;}
 
   :root{
@@ -407,7 +408,7 @@
   body.panel-collapsed #right{ display:none; }
   body.panel-collapsed #left{ flex:1 1 100%; }
 
-  /* ── 전체화면 오버레이(눈동자 + 로그) ───────────────── */
+  /* ── 전체화면 오버레이 ───────────────── */
   #playOverlay{
     position:fixed;
     inset:0;
@@ -418,15 +419,14 @@
     touch-action:none;
     overscroll-behavior:contain;
     -webkit-tap-highlight-color:transparent;
-    /* 오버레이 전용: 눈 60% 축소(변수로 직접 덮어쓰기) */
-    --eyesGap: 4.8vmin;            /* 8vmin * 0.6 */
-    --eyeSize: 25.2vmin;           /* 42vmin * 0.6 */
-    --pupilSize: 9.6vmin;          /* 16vmin * 0.6 */
+    --eyesGap: 4.8vmin;
+    --eyeSize: 25.2vmin;
+    --pupilSize: 9.6vmin;
   }
   @media (orientation: landscape){
     #playOverlay{
-      --eyesGap: calc(4.8vmin * 2);          /* 가로에서 간격 2배 */
-      --eyeSize: calc(25.2vmin * 1.5);       /* 가로에서 기본 1.5배 */
+      --eyesGap: calc(4.8vmin * 2);
+      --eyeSize: calc(25.2vmin * 1.5);
       --pupilSize: calc(9.6vmin * 1.5);
     }
   }
@@ -434,15 +434,17 @@
     display:flex;
     flex-direction:column;
   }
+  /* 여기에서도 grid 사용 (위쪽 패치와 동일한 비율) */
   #playOverlay .body{
     flex:1 1 auto;
-    display:flex;
-    align-items:center;
-    justify-content:center;
+    display:grid;
+    grid-template-columns: minmax(0, 2.6fr) minmax(260px, 1fr);
+    gap:0;
     background:#000;
+    height:100%;
   }
 
-  /* 눈동자 UI (숨겨져 있으나 구조 유지) */
+  /* 눈동자 UI (현재는 숨김 상태지만 구조 유지) */
   #eyesStage{
     width:100%;
     height:100%;
@@ -670,7 +672,7 @@
   <!-- 헤더 -->
   <header id="appHeader">
     <div id="topbar">
-      <div class="title">XROBO number — 숫자 인식</div>
+      <div class="title">XROBO v1 — 숫자 인식</div>
       <div class="spacer"></div>
 
       <!-- 파일 드롭다운 -->
@@ -1069,7 +1071,7 @@ var bleDevice=null,bleServer=null,bleService=null,writeChar=null,notifyChar=null
 var isConnected=false, isRunning=false, isFullscreenRun=false;
 var $=id=>document.getElementById(id);
 
-/* 로그는 우측 패널 + 전체화면 로그 둘 다에 출력 */
+/* 로그: 우측 패널 + 전체화면 로그 둘 다에 출력 */
 var log=function(m){
   var L=$('log');
   if(L){
@@ -1478,7 +1480,7 @@ document.addEventListener('keydown', (e)=>{
   if (isFullscreenRun && e.key === 'Escape') stopRun();
 });
 
-/* ================= 카메라(패널): 중앙 ROI + 흑백 필터 ================= */
+/* ================= 카메라(패널): 중앙 ROI + 강화된 흑백 필터 ================= */
 const camWrap   = document.getElementById('camWrap');
 const camVideo  = document.getElementById('camVideo');
 const camToggle = document.getElementById('camToggle');
@@ -1488,20 +1490,20 @@ const digitReadout = document.getElementById('digitReadout');
 const digitValEl = digitReadout.querySelector('.value');
 
 /* 공용 파라미터 (패널/오버레이 동일 사용) */
-const LOW_W = 64, LOW_H = 48;         // 모션용 다운샘플 (지금은 사용 X, 호환용 유지)
+const LOW_W = 64, LOW_H = 48;         // 다운샘플 크기 (지금은 모션용)
 
-// OCR 파라미터
+/* OCR 파라미터 */
 const OCR_W = 240, OCR_H = 240;
-// 0.5초 간격으로 숫자 인식
-const DETECT_PERIOD_MS = 500;
-// 이벤트 실행 최소 신뢰도(%) – 50% 이상
+/* 1초 간격으로 숫자 인식 */
+const DETECT_PERIOD_MS = 1000;
+/* 이벤트 실행 최소 신뢰도(%) – 50% 이상 */
 const EVENT_CONF_MIN = 50;
-// ROI 평균 밝기 최소(하얀 종이 가정)
+/* ROI 평균 밝기 최소(하얀 종이 가정) */
 const BG_MIN_MEAN = 90;
-// 투명창 안 픽셀 중 "회색 계열" 비율 최소값
-const GRAY_MIN_RATIO = 0.6;
-// R,G,B 최대-최소 차이가 이 값 이하이면 회색 계열로 판단(약간의 노란/푸른빛 허용)
-const COLOR_TOLERANCE = 36;
+/* 투명창 안 픽셀 중 "회색 계열" 비율 최소값 (더 엄격하게: 75%) */
+const GRAY_MIN_RATIO = 0.75;
+/* R,G,B 최대-최소 차이가 이 값 이하이면 회색 계열로 판단(색깔이 너무 강하면 제외) */
+const COLOR_TOLERANCE = 24;
 
 let camStream = null, camOn = false, camRAF = null;
 
@@ -1669,9 +1671,11 @@ async function runOcrOnVideo(video, fullFrame=false){
   const mean = pp.mean;
   const grayRatio = pp.grayRatio;
 
+  // 회색 계열 비율이 낮으면 숫자 인식 자체를 하지 않음
   if(grayRatio < GRAY_MIN_RATIO){
     return {status:'no-gray', mean, grayRatio};
   }
+  // ROI가 너무 어두우면(종이가 안 보이거나 환경이 어두움) 인식하지 않음
   if(mean < BG_MIN_MEAN){
     return {status:'too-dark', mean, grayRatio};
   }
@@ -1739,7 +1743,7 @@ function describeNoDigitReason(res){
   }
 }
 
-/* 0.5초 파이프라인: 숫자 인식 → 로그 → 이벤트 확인/실행 */
+/* 1초 파이프라인: 숫자 인식 → 로그 → 이벤트 확인/실행 */
 let panelLastDetectTs = 0;
 let overlayLastDetectTs = 0;
 
@@ -1747,7 +1751,6 @@ function handleDigitPipeline(res, source){
   const prefix = (source === 'overlay') ? '[전체화면]' : '[카메라]';
 
   if(!res || res.status==='busy' || res.status==='not-ready' || res.status==='no-frame'){
-    // 준비중/바쁠 때는 로그 과다 방지를 위해 조용히 건너뜀
     return;
   }
 
@@ -1809,7 +1812,7 @@ function startDetectLoop(){
   camRAF = requestAnimationFrame(step);
 }
 
-/* ================= 전체화면 눈동자 / 오버레이 숫자 인식 ================= */
+/* ================= 전체화면 숫자 인식(영상 + 로그) ================= */
 const overlayEl = document.getElementById('playOverlay');
 const overlayDigitBadge = document.getElementById('overlayDigitBadge');
 const overlayDigitVal   = overlayDigitBadge.querySelector('.value');
@@ -1819,10 +1822,12 @@ const ovEyes   = [...document.querySelectorAll('#playOverlay .eye')];
 const ovPupils = [...document.querySelectorAll('#playOverlay .pupil')];
 
 let eyesRAF = null;
-let ovPrevGray = null;
-
-/* 눈꺼풀 깜빡임 */
 let overlayBlinkTimer = null;
+
+let ovCurrent = {x:0, y:0};
+let ovTarget  = {x:0, y:0};
+
+/* 눈꺼풀 깜빡임 (눈은 숨김이지만 로직 유지) */
 function scheduleOverlayBlink(){
   clearTimeout(overlayBlinkTimer);
   const t = 2200 + Math.random()*3300;
@@ -1852,9 +1857,18 @@ function renderPupils(nx, ny){
   });
 }
 
-/* 터치/드래그로 시선 이동 (현재 눈은 숨김이지만 로직 유지) */
-let overlayPointerActive = false, overlayPointerIdleTimer = null;
-let ovCurrent = {x:0, y:0}, ovTarget = {x:0, y:0};
+/* 숫자 배지 갱신(오버레이) */
+function overlayShowDigit(d){
+  if (d==null){
+    overlayDigitBadge.style.display='none';
+    return;
+  }
+  overlayDigitVal.textContent = String(d);
+  overlayDigitBadge.style.display='inline-flex';
+}
+
+/* 터치/드래그로 시선 이동 (눈은 숨김이지만 유지) */
+let overlayPointerIdleTimer = null;
 function setOverlayTarget(nx,ny){
   ovTarget.x = Math.max(-1, Math.min(1,nx));
   ovTarget.y = Math.max(-1, Math.min(1,ny));
@@ -1865,9 +1879,8 @@ function handleOverlayPointer(e){
   const dx = pt.clientX - cx, dy = pt.clientY - cy;
   const d = Math.hypot(innerWidth, innerHeight) || 1;
   setOverlayTarget(dx/(d*0.25), dy/(d*0.25));
-  overlayPointerActive = true;
   clearTimeout(overlayPointerIdleTimer);
-  overlayPointerIdleTimer = setTimeout(()=> { overlayPointerActive = false; }, 900);
+  overlayPointerIdleTimer = setTimeout(()=> { setOverlayTarget(0,0); }, 900);
 }
 
 /* 더블 탭/클릭 종료 */
@@ -1883,17 +1896,7 @@ function onOverlayPointerDown(e){
 }
 function onOverlayDblClick(){ stopRun(); }
 
-/* 숫자 배지 갱신(오버레이) */
-function overlayShowDigit(d){
-  if (d==null){
-    overlayDigitBadge.style.display='none';
-    return;
-  }
-  overlayDigitVal.textContent = String(d);
-  overlayDigitBadge.style.display='inline-flex';
-}
-
-/* 오버레이 감지 루프 */
+/* 오버레이 숫자 인식 루프 */
 async function startOverlayEyes(){
   if(eyesRAF){ cancelAnimationFrame(eyesRAF); eyesRAF = null; }
   overlayShowDigit(null);
@@ -1936,7 +1939,7 @@ async function startOverlayEyes(){
       }
     }
 
-    // 동공 부드럽게 이동 (눈은 숨김이지만 로직 유지)
+    // 동공 부드럽게 이동
     ovCurrent.x += (ovTarget.x - ovCurrent.x) * 0.08;
     ovCurrent.y += (ovTarget.y - ovCurrent.y) * 0.08;
     renderPupils(ovCurrent.x, ovCurrent.y);
@@ -1948,7 +1951,6 @@ async function startOverlayEyes(){
 
 function stopOverlayEyes(){
   if(eyesRAF){ cancelAnimationFrame(eyesRAF); eyesRAF=null; }
-  ovPrevGray=null;
   overlayShowDigit(null);
   clearTimeout(overlayBlinkTimer);
   overlayEl.removeEventListener('pointermove', handleOverlayPointer);
