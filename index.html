@@ -673,12 +673,28 @@
   #xrobo-kp4x4-v14 .ok{ background:#2563eb; color:#fff; }
   #xrobo-kp4x4-v14 .cancel{ background:#6b7280; color:#fff; }
 </style>
+
+<!-- ★★★ 실행 전체화면에서 카메라만 사용 + 실행 로그 숨김 패치 ★★★ -->
+<style id="overlay-fullcam-patch">
+  /* 실행(전체화면)에서는 카메라 화면만 전체 사용, 오른쪽 실행 로그 패널 숨김 */
+  #playOverlay .body{
+    flex:1 1 auto;
+    display:flex;
+    flex-direction:column;
+    height:100%;
+    background:#000;
+  }
+  #ovRight{
+    display:none !important;
+  }
+</style>
+
 </head>
 <body>
   <!-- 헤더 -->
   <header id="appHeader">
     <div id="topbar">
-      <div class="title">XROBO v4 — 숫자 인식</div>
+      <div class="title">XROBO v5 — 숫자 인식</div>
       <div class="spacer"></div>
 
       <!-- 파일 드롭다운 -->
@@ -1386,6 +1402,7 @@ async function processQueue(localToken){
 /* 이벤트 실행 + 로그 */
 function triggerEvent(name, conf, source){
   var digitLabel = (name && name.charAt && name.charAt(0)==='D') ? name.slice(1) : String(name||'');
+
   if(!isRunning){
     log(`⏸ 실행 중이 아니라 이벤트를 실행하지 않습니다. (D${digitLabel})`);
     return;
