@@ -9,22 +9,24 @@
 <script src="https://unpkg.com/tesseract.js@5/dist/tesseract.min.js"></script>
 <style>
 
-/* === 전체화면 실행 시: 영상 크게, 로그 조금 작게 === */
+/* === 전체화면 실행 시: 영상 크게 (로그는 숨김) === */
 #playOverlay .body{
-  display:grid;
-  grid-template-columns: minmax(0, 2.6fr) minmax(260px, 1fr); /* 왼쪽(영상) : 오른쪽(로그) */
-  gap:0;
+  display:flex;
+  flex:1 1 auto;
   height:100%;
+  background:#000;
 }
 #playOverlay video#eyesCam{
+  flex:1 1 auto;
   width:100%;
   height:100%;
   object-fit:contain;
   background:#000;
   transform: scaleX(-1);
 }
+/* 전체화면에서는 오른쪽 로그 패널 숨김 */
 #playOverlay .ov-right-panel{
-  display:flex;
+  display:none;
   flex-direction:column;
   min-width:0;
   background:#0b0f14;
@@ -68,14 +70,10 @@
   letter-spacing:.5px;
 }
 @media (max-width:880px){
-  /* 작은 화면에서는 위:영상 / 아래:로그 (로그 높이 약 180~220px) */
+  /* 작은 화면에서도 영상만 풀로 사용 */
   #playOverlay .body{
-    grid-template-columns: 1fr;
-    grid-template-rows: minmax(0, 1.7fr) minmax(180px, .9fr);
-  }
-  #playOverlay .ov-right-panel{
-    border-left:none;
-    border-top:1px solid #123;
+    display:flex;
+    flex-direction:column;
   }
 }
 
@@ -434,12 +432,10 @@
     display:flex;
     flex-direction:column;
   }
-  /* 여기에서도 grid 사용 (위쪽 패치와 동일한 비율) */
+  /* 오버레이 바디도 flex(영상 전용) */
   #playOverlay .body{
     flex:1 1 auto;
-    display:grid;
-    grid-template-columns: minmax(0, 2.6fr) minmax(260px, 1fr);
-    gap:0;
+    display:flex;
     background:#000;
     height:100%;
   }
@@ -541,17 +537,16 @@
     box-shadow: 0 0 0 2px rgba(255,255,255,.18) inset;
   }
 
-  /* 전체화면 처리용 전면 카메라(아주 작게, 거울효과, 이벤트 막지 않기) */
+  /* 전체화면 처리용 전면 카메라: 오버레이 안에서 전체 화면 */
   #eyesCam{
-    position: fixed;
-    left:0;
-    bottom:0;
-    width:12px;
-    height:12px;
-    opacity: .05;
-    pointer-events:none;
+    position:relative;
+    width:100%;
+    height:100%;
+    opacity: 1;
+    pointer-events:auto;
     z-index:0;
     transform: scaleX(-1);
+    background:#000;
   }
 
   /* === 파일 드롭다운 === */
@@ -769,13 +764,13 @@
     </category>
   </xml>
 
-  <!-- 전체화면 오버레이: 카메라 + 실행로그 + (숨겨진 눈동자) -->
+  <!-- 전체화면 오버레이: 카메라 + (숨겨진 눈동자) -->
   <div id="playOverlay" aria-hidden="true">
     <div class="body">
-      <!-- 처리용 전면 카메라 -->
+      <!-- 처리용 전면 카메라 (이제 전체 화면) -->
       <video id="eyesCam" playsinline muted autoplay></video>
 
-      <!-- 오른쪽 실행 로그 패널 -->
+      <!-- 오른쪽 실행 로그 패널 (CSS에서 display:none 처리) -->
       <div id="ovRight" class="ov-right-panel" aria-label="실행 로그 영역">
         <div class="ov-header">실행 로그</div>
         <div id="ovLog" class="ov-log" role="log" aria-live="polite" aria-atomic="false"></div>
@@ -1376,7 +1371,7 @@ async function processQueue(localToken){
   }
 }
 
-/* 이벤트 실행 + 로그 (③) */
+/* 이벤트 실행 + 로그 */
 function triggerEvent(name, conf, source){
   var digitLabel = (name && name.charAt && name.charAt(0)==='D') ? name.slice(1) : String(name||'');
   if(!isRunning){
@@ -1441,7 +1436,6 @@ async function startFullRun(){
       await eyesCam.play();
     }
   }catch(e){}
-
   startOverlayEyes();
 }
 
@@ -1480,7 +1474,7 @@ document.addEventListener('keydown', (e)=>{
   if (isFullscreenRun && e.key === 'Escape') stopRun();
 });
 
-/* ================= 카메라(패널): 중앙 ROI + 강화된 흑백 필터 ================= */
+/* ================= 카메라(패널): 중앙 ROI + 흑백 필터 ================= */
 const camWrap   = document.getElementById('camWrap');
 const camVideo  = document.getElementById('camVideo');
 const camToggle = document.getElementById('camToggle');
@@ -1675,7 +1669,7 @@ async function runOcrOnVideo(video, fullFrame=false){
   if(grayRatio < GRAY_MIN_RATIO){
     return {status:'no-gray', mean, grayRatio};
   }
-  // ROI가 너무 어두우면(종이가 안 보이거나 환경이 어두움) 인식하지 않음
+  // ROI가 너무 어두우면 인식하지 않음
   if(mean < BG_MIN_MEAN){
     return {status:'too-dark', mean, grayRatio};
   }
@@ -1743,42 +1737,80 @@ function describeNoDigitReason(res){
   }
 }
 
-/* 1초 파이프라인: 숫자 인식 → 로그 → 이벤트 확인/실행 */
+/* 1초 파이프라인 상태 저장용 */
 let panelLastDetectTs = 0;
 let overlayLastDetectTs = 0;
+let lastDigitStatePanel = null;   // null or '0'~'9'
+let lastDigitStateOverlay = null;
 
+/* 숫자 인식 → (변화 있을 때만) 로그/이벤트 실행 */
 function handleDigitPipeline(res, source){
   const prefix = (source === 'overlay') ? '[전체화면]' : '[카메라]';
 
+  // 준비 안됨/바쁜 경우는 아무 것도 하지 않음 (상태 유지)
   if(!res || res.status==='busy' || res.status==='not-ready' || res.status==='no-frame'){
     return;
   }
 
-  if(res.status !== 'ok' || res.digit == null){
-    if(source === 'panel'){
-      updateDigitReadout(null);
+  let digit = null;
+  let conf  = 0;
+  let reason = '';
+
+  if(res.status === 'ok' && res.digit != null){
+    digit = String(res.digit);
+    conf  = typeof res.conf === 'number' ? res.conf : 0;
+
+    if(conf < EVENT_CONF_MIN){
+      reason = `신뢰도 ${conf.toFixed(1)}% < ${EVENT_CONF_MIN}%`;
+      digit = null;   // 상태로는 '숫자 없음' 취급
     }
-    const reason = describeNoDigitReason(res);
-    log(`${prefix} ① 숫자 인식: 없음 (${reason})`);
+  }else{
+    reason = describeNoDigitReason(res);
+    digit = null;
+  }
+
+  // 이전 상태
+  let last = (source === 'overlay') ? lastDigitStateOverlay : lastDigitStatePanel;
+  let newState = digit || null;
+
+  // 상태 변화가 없으면 UI만 유지/업데이트, 로그/이벤트는 생략
+  if(last === newState){
+    if(source === 'panel'){
+      updateDigitReadout(newState);
+    }else{
+      overlayShowDigit(newState);
+    }
     return;
   }
 
-  const digit = String(res.digit);
-  const conf  = typeof res.conf === 'number' ? res.conf : 0;
+  // 상태 갱신
+  if(source === 'overlay'){
+    lastDigitStateOverlay = newState;
+  }else{
+    lastDigitStatePanel = newState;
+  }
 
+  // UI 갱신
   if(source === 'panel'){
-    updateDigitReadout(digit);
+    updateDigitReadout(newState);
+  }else{
+    overlayShowDigit(newState);
   }
 
-  log(`${prefix} ① 숫자 인식: ${digit} (${conf.toFixed(1)}%)`);
-  log(`${prefix} ② 이벤트 확인중: 숫자 ${digit}`);
-
-  if(conf < EVENT_CONF_MIN){
-    log(`${prefix} ⚠️ 신뢰도 ${conf.toFixed(1)}% 로 50% 미만이라 이벤트를 실행하지 않습니다.`);
+  // 로그 & 이벤트
+  if(newState == null){
+    if(reason){
+      log(`${prefix} 숫자 없음 (${reason})`);
+    }else{
+      log(`${prefix} 숫자 없음`);
+    }
     return;
   }
 
-  triggerEvent('D'+digit, conf, source);
+  // 숫자가 새로 인식되었을 때만
+  log(`${prefix} 숫자 ${newState} (${conf.toFixed(1)}%)`);
+  log(`${prefix} 이벤트 확인중: 숫자 ${newState}`);
+  triggerEvent('D'+newState, conf, source);
 }
 
 /* 패널 감지 루프 */
@@ -1812,7 +1844,7 @@ function startDetectLoop(){
   camRAF = requestAnimationFrame(step);
 }
 
-/* ================= 전체화면 숫자 인식(영상 + 로그) ================= */
+/* ================= 전체화면 숫자 인식(영상 + 숫자 배지) ================= */
 const overlayEl = document.getElementById('playOverlay');
 const overlayDigitBadge = document.getElementById('overlayDigitBadge');
 const overlayDigitVal   = overlayDigitBadge.querySelector('.value');
@@ -1931,15 +1963,9 @@ async function startOverlayEyes(){
       overlayLastDetectTs = now;
       const res = await runOcrOnVideo(eyesCam, false); // 중앙 ROI 기준
       handleDigitPipeline(res, 'overlay');
-
-      if(res && res.status==='ok' && res.digit!=null){
-        overlayShowDigit(res.digit);
-      }else{
-        overlayShowDigit(null);
-      }
     }
 
-    // 동공 부드럽게 이동
+    // 동공 부드럽게 이동 (눈은 숨김)
     ovCurrent.x += (ovTarget.x - ovCurrent.x) * 0.08;
     ovCurrent.y += (ovTarget.y - ovCurrent.y) * 0.08;
     renderPupils(ovCurrent.x, ovCurrent.y);
